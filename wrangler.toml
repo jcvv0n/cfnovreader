@@ -3,5 +3,5 @@ main = "src/index.ts"
 workers_dev = true
 compatibility_date = "2025-04-05"
 kv_namespaces = [
-  { binding = "NOV_KV", id = "xxx" }
+  { binding = "KV_BINDING", id = "${KV_ID}" }
 ]

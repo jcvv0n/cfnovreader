@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "esnext",
+    "lib": ["es2021", "DOM"],
+    "types": ["@cloudflare/workers-types/global"]
+  }
+}

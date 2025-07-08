@@ -1,0 +1,20 @@
+{
+  "name": "cfnovreader",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx wrangler dev"
+  },
+  "keywords": [],
+  "author": "jcvv0n",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250627.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.22.0"
+  },
+  "dependencies": {
+    "miniflare": "^4.20250617.4"
+  }
+}

@@ -1,7 +1,7 @@
-name = "sfnovreader"
+name = "cfnovreader"
 main = "src/index.ts"
 workers_dev = true
 compatibility_date = "2025-04-05"
-kv_namespaces = [
-  { binding = "KV_BINDING", id = "${KV_ID}" }
-]
+
+[define]
+KV_ID = ""

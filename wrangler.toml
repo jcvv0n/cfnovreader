@@ -2,6 +2,6 @@ name = "cfnovreader"
 main = "src/index.ts"
 workers_dev = true
 compatibility_date = "2025-04-05"
-
-[define]
-KV_ID = ""
+kv_namespaces = [
+  { binding = "NOV_KV", id = "${KV_ID}" }
+]

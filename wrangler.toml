@@ -5,3 +5,6 @@ compatibility_date = "2025-04-05"
 kv_namespaces = [
   { binding = "NOV_KV", id = "KV_ID" }
 ]
+r2_buckets = [
+  { binding = "NOV_BUCKET", bucket_name = "r2-id" }
+]

@@ -1,3 +1,6 @@
+import { ByteBuffer } from 'flatbuffers';
+import { StoryContentArray } from './story-content';
+
 const storysTemplate = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -70,6 +73,7 @@ const readerTemplate = `<!DOCTYPE html>
 
 export interface Env {
   NOV_KV: KVNamespace
+  NOV_BUCKET: R2Bucket
 }
 
 interface StoryOverview {
@@ -109,17 +113,22 @@ export default {
 
     switch (pageType) {
       case 'stos':
+        if (route != '1') {
+          return new Response("Invalid Page", { status: 404 });
+        }
         html = genStoryOverview(namespace, storys);
         break;
       case 'cat':
-        contents = await env.NOV_KV.get(`story_content:${route}`, 'json');
+        // contents = await env.NOV_KV.get(`story_content:${route}`, 'json');
+        contents = await getStoryContentFromR2(env.NOV_BUCKET, route);
         if (!contents) {
           return new Response("Invalid Page", { status: 404 });
         }
         html = genStoryCatalog(namespace, storys, contents, route);
         break;
       case 'cont':
-        contents = await env.NOV_KV.get(`story_content:${route}`, 'json');
+        // contents = await env.NOV_KV.get(`story_content:${route}`, 'json');
+        contents = await getStoryContentFromR2(env.NOV_BUCKET, route);
         if (!contents) {
           return new Response("Invalid Page", { status: 404 });
         }
@@ -142,6 +151,32 @@ export default {
     });
   }
 };
+
+async function getStoryContentFromR2(bucket: R2Bucket, storyId: string): Promise<Array<StoryContent>> {
+  const object = await bucket.get(`story_content:${storyId}`);
+  if (!object) {
+    return null;
+  }
+
+  const arrayBuffer = await object.arrayBuffer();
+  const data = new ByteBuffer(new Uint8Array(arrayBuffer));
+  const content = StoryContentArray.getRootAsStoryContentArray(data);
+  const pages: StoryContent[] = [];
+
+  for (let i = 0; i < content.itemsLength(); i++) {
+    const page = content.items(i)!;
+    const contentArr: string[] = [];
+    for (let j = 0; j < page.contentLength(); j++) {
+      contentArr.push(page.content(j)!);
+    }
+    pages.push({
+      pageNo: i + 1,
+      pageDesc: page.title() || '',
+      content: contentArr,
+    });
+  }
+  return pages;
+}
 
 // 生成概览页
 function genStoryOverview(namespace: string, storys: Array<StoryOverview>): string {

@@ -15,6 +15,7 @@
     "wrangler": "^4.22.0"
   },
   "dependencies": {
+    "flatbuffers": "^25.2.10",
     "miniflare": "^4.20250617.4"
   }
 }

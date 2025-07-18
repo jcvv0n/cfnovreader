@@ -1,0 +1,12 @@
+namespace StoryContent;
+
+table StoryContentItem {
+  title:string;
+  content:[string];
+}
+
+table StoryContentArray {
+  items:[StoryContentItem];
+}
+
+root_type StoryContentArray; 

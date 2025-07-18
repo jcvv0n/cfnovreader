@@ -191,7 +191,7 @@ function genStoryCatalog(namespace: string, storys: Array<StoryOverview>, conten
   const story: StoryOverview = storys.find(e => e.storyId == storyId);
   const prePage: string = `<p><a href="/r/${namespace}/stos/1#s${story.storyId}">Story Overview</a></p></br>`;
   const storyCatalog: string = contents.map((e : StoryContent) => {
-    return `<p id="p{{$value.PageNo}}"><a href="/r/${namespace}/cont/${storyId}?p=${e.pageNo}">${e.pageDesc}</a></p>`;
+    return `<p id="p${e.pageNo}"><a href="/r/${namespace}/cont/${storyId}?p=${e.pageNo}">${e.pageDesc}</a></p>`;
   }).join('\n');
   return catalogTemplate.replace(/{{PRE_PAGE}}/g, prePage).replace(/{{STORY_NAME}}/g, story.storyName).replace(/{{STORY_CATALOG}}/g, storyCatalog);
 }

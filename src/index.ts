@@ -66,13 +66,13 @@ const catalogTemplate = `<!DOCTYPE html>
 
 <div class="pagination">
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p=1" title="First page" class="{{FIRST_DISABLED}}">«</a>
-  &nbsp&nbsp<a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{PREV_PAGE}}" title="Prev page" class="{{PREV_DISABLED}}">‹</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{PREV_PAGE}}" title="Prev page" class="{{PREV_DISABLED}}">‹</a>
 
-  &nbsp&nbsp<input type="number" id="pageInput" value="{{CURRENT_PAGE}}" min="1" max="{{TOTAL_PAGES}}" style="width: 60px;" />
+  <input type="number" id="pageInput" value="{{CURRENT_PAGE}}" min="1" max="{{TOTAL_PAGES}}" style="width: 60px;" />
   <button onclick="goToPage()">Go</button>
 
-  &nbsp&nbsp<a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{NEXT_PAGE}}" title="Next page" class="{{NEXT_DISABLED}}">›</a>
-  &nbsp&nbsp<a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}" title="Last page" class="{{LAST_DISABLED}}">»</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{NEXT_PAGE}}" title="Next page" class="{{NEXT_DISABLED}}">›</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}" title="Last page" class="{{LAST_DISABLED}}">»</a>
 </div>
 
 <script>
@@ -260,7 +260,7 @@ function genStoryCatalog(namespace: string, storys: Array<StoryOverview>, conten
     return `<p id="p${e.pageNo}"><a href="/r/${namespace}/cont/${storyId}?p=${e.pageNo}">${e.pageDesc}</a></p>`;
   }).join('\n');
 
-  const overviewPage: string = `<p><a href="/r/${namespace}/stos/1#s${story.storyId}">Story Overview</a></p></br>`;
+  const overviewPage: string = `<p><a href="/r/${namespace}/stos/1#s${story.storyId}">Story Overview</a></p>`;
 
   return catalogTemplate
       .replace(/{{NAMESPACE}}/g, namespace)

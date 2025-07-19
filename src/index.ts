@@ -68,7 +68,17 @@ const catalogTemplate = `<!DOCTYPE html>
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p=1" title="First page" class="{{FIRST_DISABLED}}">«</a>
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{PREV_PAGE}}" title="Prev page" class="{{PREV_DISABLED}}">‹</a>
 
-  <input type="number" id="pageInput" value="{{CURRENT_PAGE}}" min="1" max="{{TOTAL_PAGES}}" style="width: 60px;" />
+  <input
+    type="text"
+    id="pageInput"
+    value="{{CURRENT_PAGE}}"
+    min="1"
+    max="{{TOTAL_PAGES}}"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+    style="width: 60px;"
+  />
   <button onclick="goToPage()">Go</button>
 
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{NEXT_PAGE}}" title="Next page" class="{{NEXT_DISABLED}}">›</a>

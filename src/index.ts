@@ -37,13 +37,13 @@ const storysTemplate = `<!DOCTYPE html>
       cursor: pointer;
       border: 1px solid #ccc;
     }
-    .theme-option::after {
+    .theme-option::before {
       content: attr(data-check);
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 20px;
+      font-size: 10px;
       color: red;
     }
   </style>
@@ -144,13 +144,13 @@ const catalogTemplate = `<!DOCTYPE html>
       cursor: pointer;
       border: 1px solid #ccc;
     }
-    .theme-option::after {
+    .theme-option::before {
       content: attr(data-check);
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 20px;
+      font-size: 10px;
       color: red;
     }
   </style>
@@ -265,13 +265,13 @@ const readerTemplate = `<!DOCTYPE html>
       cursor: pointer;
       border: 1px solid #ccc;
     }
-    .theme-option::after {
+    .theme-option::before {
       content: attr(data-check);
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 20px;
+      font-size: 10px;
       color: red;
     }
   </style>

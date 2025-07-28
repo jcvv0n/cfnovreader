@@ -530,7 +530,7 @@ function genContentPage(namespace: string, storys: Array<StoryOverview>, content
 function getThemeColors(theme: string): { bgColor: string, textColor: string } {
   switch (theme) {
     case 'dark':
-      return { bgColor: '#1e1e1e', textColor: '#ffffff' };
+      return { bgColor: '#1e1e1e', textColor: '#808080' };
     case 'green':
       return { bgColor: '#e5f5e5', textColor: '#003300' };
     case 'yellow':
@@ -545,7 +545,7 @@ function getThemeColors(theme: string): { bgColor: string, textColor: string } {
 function getThemeStyle(theme: string): string {
   switch (theme) {
     case 'dark':
-      return `body { background-color: #1e1e1e; color: #ffffff; font-family: SimHei; } a { color: #cccccc; }`;
+      return `body { background-color: #1e1e1e; color: #808080; font-family: SimHei; } a { color: #cccccc; }`;
     case 'green':
       return `body { background-color: #e5f5e5; color: #003300; font-family: SimHei; } a { color: #006600; }`;
     case 'yellow':

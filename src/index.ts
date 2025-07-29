@@ -2,7 +2,7 @@ import { ByteBuffer } from 'flatbuffers';
 import { StoryContentArray } from './story-content';
 
 const storysTemplate = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="{{THEME}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,6 +23,9 @@ const storysTemplate = `<!DOCTYPE html>
       z-index: 1000;
       text-align: center;
       box-sizing: border-box; /* Include border in width/height */
+    }
+    html[data-theme="dark"] #theme-popup {
+      background: rgba(30, 30, 30, 0.9);
     }
     .theme-option {
       width: 40px;
@@ -129,7 +132,7 @@ const storysTemplate = `<!DOCTYPE html>
 `;
 
 const catalogTemplate = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="{{THEME}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -170,6 +173,9 @@ const catalogTemplate = `<!DOCTYPE html>
       z-index: 1000;
       text-align: center;
       box-sizing: border-box;
+    }
+    html[data-theme="dark"] #theme-popup {
+      background: rgba(30, 30, 30, 0.9);
     }
     .theme-option {
       width: 40px;
@@ -303,7 +309,7 @@ const catalogTemplate = `<!DOCTYPE html>
 `;
 
 const readerTemplate = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="{{THEME}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -363,6 +369,10 @@ const readerTemplate = `<!DOCTYPE html>
        font-size: 28px;
        /* Reduce line height to minimize vertical space */
        line-height: 1;
+    }
+    html[data-theme="dark"] #theme-popup,
+    html[data-theme="dark"] #bottom-popup {
+      background: rgba(30, 30, 30, 0.9);
     }
   </style>
 </head>
@@ -702,7 +712,7 @@ function getThemeColors(theme: string): { bgColor: string, textColor: string } {
 function getThemeStyle(theme: string): string {
   switch (theme) {
     case 'dark':
-      return `body { background-color: #1e1e1e; color: #808080; font-family: SimHei; } a { color: #cccccc; }`;
+      return `body { background-color: #1e1e1e; color: #808080; font-family: SimHei; } a { color: #808080; }`;
     case 'green':
       return `body { background-color: #e5f5e5; color: #003300; font-family: SimHei; } a { color: #006600; }`;
     case 'yellow':
@@ -710,6 +720,6 @@ function getThemeStyle(theme: string): string {
     case 'green2':
       return `body { background-color: #d4edc9; color: #333333; font-family: SimHei; } a { color: #006600; }`;
     default:
-      return `body { background-color: #e5e5e5; color: #000000; font-family: SimHei; } a { color: #0000cc; }`;
+      return `body { background-color: #e5e5e5; color: #000000; font-family: SimHei; } a { color: #000000; }`;
   }
 }

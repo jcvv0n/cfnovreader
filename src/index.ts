@@ -64,7 +64,43 @@ const storysTemplate = `<!DOCTYPE html>
   <a class="theme-option" data-theme="green2" style="background: #d4edc9;" data-check=""></a>
 </div>
 <script>
+  function setupThemeToggle() {
+    // 防止重复初始化
+    if (window.themeToggleInitialized) {
+      return;
+    }
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeMenu = document.getElementById('theme-menu');
+
+    if (themeToggle && themeMenu) {
+      // 标记已初始化
+      window.themeToggleInitialized = true;
+
+      let menuVisible = false;
+
+      themeToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        menuVisible = !menuVisible;
+        themeMenu.style.display = menuVisible ? 'block' : 'none';
+      });
+
+      // 点击页面其他地方隐藏菜单
+      document.addEventListener('click', function (e) {
+        const target = e.target;
+        if (menuVisible && themeMenu.style.display === 'block' &&
+            !themeToggle.contains(target) &&
+            !themeMenu.contains(target)) {
+          menuVisible = false;
+          themeMenu.style.display = 'none';
+        }
+      });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    setupThemeToggle();
+    
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
@@ -75,11 +111,6 @@ const storysTemplate = `<!DOCTYPE html>
         option.setAttribute('data-check', '✔');
       }
       option.setAttribute('href', '?theme=' + theme);
-    });
-
-    document.getElementById('theme-toggle').addEventListener('click', function () {
-      const menu = document.getElementById('theme-menu');
-      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
   });
 </script>
@@ -190,7 +221,43 @@ const catalogTemplate = `<!DOCTYPE html>
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}&theme={{THEME}}" title="Last page" class="{{LAST_DISABLED}}">»</a>
 </div>
 <script>
+  function setupThemeToggle() {
+    // 防止重复初始化
+    if (window.themeToggleInitialized) {
+      return;
+    }
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeMenu = document.getElementById('theme-menu');
+
+    if (themeToggle && themeMenu) {
+      // 标记已初始化
+      window.themeToggleInitialized = true;
+
+      let menuVisible = false;
+
+      themeToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        menuVisible = !menuVisible;
+        themeMenu.style.display = menuVisible ? 'block' : 'none';
+      });
+
+      // 点击页面其他地方隐藏菜单
+      document.addEventListener('click', function (e) {
+        const target = e.target;
+        if (menuVisible && themeMenu.style.display === 'block' &&
+            !themeToggle.contains(target) &&
+            !themeMenu.contains(target)) {
+          menuVisible = false;
+          themeMenu.style.display = 'none';
+        }
+      });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    setupThemeToggle();
+    
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
@@ -201,11 +268,6 @@ const catalogTemplate = `<!DOCTYPE html>
         option.setAttribute('data-check', '✔');
       }
       option.setAttribute('href', '?p={{CURRENT_PAGE}}&theme=' + theme);
-    });
-
-    document.getElementById('theme-toggle').addEventListener('click', function () {
-      const menu = document.getElementById('theme-menu');
-      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
   });
 
@@ -294,7 +356,43 @@ const readerTemplate = `<!DOCTYPE html>
 {{NEXT_PAGE_TAG}}
 {{PRE_PAGE_TAG}}
 <script>
+  function setupThemeToggle() {
+    // 防止重复初始化
+    if (window.themeToggleInitialized) {
+      return;
+    }
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeMenu = document.getElementById('theme-menu');
+
+    if (themeToggle && themeMenu) {
+      // 标记已初始化
+      window.themeToggleInitialized = true;
+
+      let menuVisible = false;
+
+      themeToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        menuVisible = !menuVisible;
+        themeMenu.style.display = menuVisible ? 'block' : 'none';
+      });
+
+      // 点击页面其他地方隐藏菜单
+      document.addEventListener('click', function (e) {
+        const target = e.target;
+        if (menuVisible && themeMenu.style.display === 'block' &&
+            !themeToggle.contains(target) &&
+            !themeMenu.contains(target)) {
+          menuVisible = false;
+          themeMenu.style.display = 'none';
+        }
+      });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    setupThemeToggle();
+    
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
@@ -305,11 +403,6 @@ const readerTemplate = `<!DOCTYPE html>
         option.setAttribute('data-check', '✔');
       }
       option.setAttribute('href', '?p={{PAGE_NO}}&theme=' + theme);
-    });
-
-    document.getElementById('theme-toggle').addEventListener('click', function () {
-      const menu = document.getElementById('theme-menu');
-      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
   });
 </script>

@@ -80,7 +80,7 @@ const storysTemplate = `<!DOCTYPE html>
     }
 
     // Handle clicks on the document
-    document.addEventListener('click', function (e) {
+    document.addEventListener('dblclick', function (e) {
       const target = e.target;
 
       // If clicking on the popup itself or inside it, do nothing
@@ -245,7 +245,7 @@ const catalogTemplate = `<!DOCTYPE html>
       themePopup.style.display = 'none';
     }
 
-    document.addEventListener('click', function (e) {
+    document.addEventListener('dblclick', function (e) {
       const target = e.target;
 
       if (themePopup.contains(target)) {
@@ -423,7 +423,7 @@ const readerTemplate = `<!DOCTYPE html>
     }
 
     // Clicking anywhere on the page
-    document.addEventListener('click', function (e) {
+    document.addEventListener('dblclick', function (e) {
       const target = e.target;
 
       // Do nothing if clicking inside either popup

@@ -10,32 +10,29 @@ const storysTemplate = `<!DOCTYPE html>
   <style>
     p{text-indent:10px;}
     a{font-family:SimHei;font-size:20px;letter-spacing:1px;text-decoration:none;}
-    #theme-toggle {
+    #theme-popup {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      z-index: 1000;
-      font-size: 20px;
-    }
-    #theme-menu {
-      position: fixed;
-      top: 40px;
-      right: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 5px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+      border-bottom: 1px solid #ccc;
+      /* Remove padding to eliminate gaps */
+      padding: 0;
       display: none;
       z-index: 1000;
+      text-align: center;
+      box-sizing: border-box; /* Include border in width/height */
     }
     .theme-option {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px; /* Adjusted height */
       display: inline-block;
-      margin: 2px;
+      margin: 0 5px; /* Keep horizontal margin, remove vertical */
       position: relative;
       cursor: pointer;
       border: 1px solid #ccc;
+      vertical-align: top; /* Align to top if needed */
     }
     .theme-option::before {
       content: attr(data-check);
@@ -43,7 +40,7 @@ const storysTemplate = `<!DOCTYPE html>
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 10px;
+      font-size: 12px;
       color: red;
     }
   </style>
@@ -55,8 +52,7 @@ const storysTemplate = `<!DOCTYPE html>
 <div align="left">
 {{STORY_OVERVIEW}}
 </div>
-<a id="theme-toggle" href="javascript:void(0)">🎨</a>
-<div id="theme-menu">
+<div id="theme-popup">
   <a class="theme-option" data-theme="default" style="background: #e5e5e5;" data-check=""></a>
   <a class="theme-option" data-theme="dark" style="background: #1e1e1e;" data-check=""></a>
   <a class="theme-option" data-theme="green" style="background: #e5f5e5;" data-check=""></a>
@@ -64,43 +60,57 @@ const storysTemplate = `<!DOCTYPE html>
   <a class="theme-option" data-theme="green2" style="background: #d4edc9;" data-check=""></a>
 </div>
 <script>
-  function setupThemeToggle() {
-    // 防止重复初始化
-    if (window.themeToggleInitialized) {
+  function setupThemePopup() {
+    if (window.themePopupInitialized) {
       return;
     }
+    window.themePopupInitialized = true;
 
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeMenu = document.getElementById('theme-menu');
+    const themePopup = document.getElementById('theme-popup');
+    let popupVisible = false;
 
-    if (themeToggle && themeMenu) {
-      // 标记已初始化
-      window.themeToggleInitialized = true;
-
-      let menuVisible = false;
-
-      themeToggle.addEventListener('click', function (e) {
-        e.preventDefault();
-        menuVisible = !menuVisible;
-        themeMenu.style.display = menuVisible ? 'block' : 'none';
-      });
-
-      // 点击页面其他地方隐藏菜单
-      document.addEventListener('click', function (e) {
-        const target = e.target;
-        if (menuVisible && themeMenu.style.display === 'block' &&
-            !themeToggle.contains(target) &&
-            !themeMenu.contains(target)) {
-          menuVisible = false;
-          themeMenu.style.display = 'none';
-        }
-      });
+    function togglePopup() {
+      popupVisible = !popupVisible;
+      themePopup.style.display = popupVisible ? 'block' : 'none';
     }
+
+    function hidePopup() {
+      popupVisible = false;
+      themePopup.style.display = 'none';
+    }
+
+    // Handle clicks on the document
+    document.addEventListener('click', function (e) {
+      const target = e.target;
+
+      // If clicking on the popup itself or inside it, do nothing
+      if (themePopup.contains(target)) {
+        return;
+      }
+
+      // Check if the clicked element is an internal link (anchor tag with href starting with '/')
+      // This prevents the popup from showing when clicking navigation links
+      if (target.tagName === 'A' && target.getAttribute('href') && target.getAttribute('href').startsWith('/')) {
+        // If popup is visible, hide it, but don't show it
+        if (popupVisible) {
+           hidePopup();
+        }
+        return; // Do not proceed with toggle logic
+      }
+
+      // If popup is visible and click is outside, hide it
+      if (popupVisible) {
+        hidePopup();
+        return;
+      }
+
+      // If popup is hidden, show it on any click (that wasn't a nav link)
+      togglePopup();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    setupThemeToggle();
-    
+    setupThemePopup();
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
@@ -148,32 +158,28 @@ const catalogTemplate = `<!DOCTYPE html>
       color: #999;
       pointer-events: none;
     }
-    #theme-toggle {
+    #theme-popup {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      z-index: 1000;
-      font-size: 20px;
-    }
-    #theme-menu {
-      position: fixed;
-      top: 40px;
-      right: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 5px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+      border-bottom: 1px solid #ccc;
+      padding: 0; /* Remove padding */
       display: none;
       z-index: 1000;
+      text-align: center;
+      box-sizing: border-box;
     }
     .theme-option {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px; /* Adjusted height */
       display: inline-block;
-      margin: 2px;
+      margin: 0 5px; /* Keep horizontal margin, remove vertical */
       position: relative;
       cursor: pointer;
       border: 1px solid #ccc;
+      vertical-align: top;
     }
     .theme-option::before {
       content: attr(data-check);
@@ -181,14 +187,13 @@ const catalogTemplate = `<!DOCTYPE html>
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 10px;
+      font-size: 12px;
       color: red;
     }
   </style>
 </head>
 <body>
-<a id="theme-toggle" href="javascript:void(0)">🎨</a>
-<div id="theme-menu">
+<div id="theme-popup">
   <a class="theme-option" data-theme="default" style="background: #e5e5e5;" data-check=""></a>
   <a class="theme-option" data-theme="dark" style="background: #1e1e1e;" data-check=""></a>
   <a class="theme-option" data-theme="green" style="background: #e5f5e5;" data-check=""></a>
@@ -221,47 +226,53 @@ const catalogTemplate = `<!DOCTYPE html>
   <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}&theme={{THEME}}" title="Last page" class="{{LAST_DISABLED}}">»</a>
 </div>
 <script>
-  function setupThemeToggle() {
-    // 防止重复初始化
-    if (window.themeToggleInitialized) {
+  function setupThemePopup() {
+    if (window.themePopupInitialized) {
       return;
     }
+    window.themePopupInitialized = true;
 
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeMenu = document.getElementById('theme-menu');
+    const themePopup = document.getElementById('theme-popup');
+    let popupVisible = false;
 
-    if (themeToggle && themeMenu) {
-      // 标记已初始化
-      window.themeToggleInitialized = true;
-
-      let menuVisible = false;
-
-      themeToggle.addEventListener('click', function (e) {
-        e.preventDefault();
-        menuVisible = !menuVisible;
-        themeMenu.style.display = menuVisible ? 'block' : 'none';
-      });
-
-      // 点击页面其他地方隐藏菜单
-      document.addEventListener('click', function (e) {
-        const target = e.target;
-        if (menuVisible && themeMenu.style.display === 'block' &&
-            !themeToggle.contains(target) &&
-            !themeMenu.contains(target)) {
-          menuVisible = false;
-          themeMenu.style.display = 'none';
-        }
-      });
+    function togglePopup() {
+      popupVisible = !popupVisible;
+      themePopup.style.display = popupVisible ? 'block' : 'none';
     }
+
+    function hidePopup() {
+      popupVisible = false;
+      themePopup.style.display = 'none';
+    }
+
+    document.addEventListener('click', function (e) {
+      const target = e.target;
+
+      if (themePopup.contains(target)) {
+        return;
+      }
+
+      // Prevent popup on clicking internal navigation links
+      if (target.tagName === 'A' && target.getAttribute('href') && (target.getAttribute('href').startsWith('/') || target.getAttribute('href').startsWith('javascript'))) {
+        if (popupVisible) {
+           hidePopup();
+        }
+        return;
+      }
+
+      if (popupVisible) {
+        hidePopup();
+        return;
+      }
+      togglePopup();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    setupThemeToggle();
-    
+    setupThemePopup();
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
-
     themeOptions.forEach(option => {
       const theme = option.getAttribute('data-theme');
       if (theme === currentTheme) {
@@ -300,32 +311,28 @@ const readerTemplate = `<!DOCTYPE html>
   <style>
     p{font-family:SimHei;font-size:22px;line-height:2.0;letter-spacing:2px;text-indent:48px;}
     a{font-family:SimHei;font-size:24px;text-decoration:none;}
-    #theme-toggle {
+    #theme-popup {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      z-index: 1000;
-      font-size: 20px;
-    }
-    #theme-menu {
-      position: fixed;
-      top: 40px;
-      right: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 5px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+      border-bottom: 1px solid #ccc;
+      padding: 0; /* Remove padding */
       display: none;
       z-index: 1000;
+      text-align: center;
+      box-sizing: border-box;
     }
     .theme-option {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px; /* Adjusted height */
       display: inline-block;
-      margin: 2px;
+      margin: 0 5px; /* Keep horizontal margin, remove vertical */
       position: relative;
       cursor: pointer;
       border: 1px solid #ccc;
+      vertical-align: top;
     }
     .theme-option::before {
       content: attr(data-check);
@@ -333,19 +340,44 @@ const readerTemplate = `<!DOCTYPE html>
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 10px;
+      font-size: 12px;
       color: red;
+    }
+    #bottom-popup {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+      border-top: 1px solid #ccc;
+      /* Reduce padding and adjust line height */
+      padding: 5px 0;
+      display: none;
+      z-index: 1000;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    #bottom-popup a {
+       margin: 0 15px;
+       /* Increase font size */
+       font-size: 34px;
+       /* Reduce line height to minimize vertical space */
+       line-height: 1;
     }
   </style>
 </head>
 <body>
-<a id="theme-toggle" href="javascript:void(0)">🎨</a>
-<div id="theme-menu">
+<div id="theme-popup">
   <a class="theme-option" data-theme="default" style="background: #e5e5e5;" data-check=""></a>
   <a class="theme-option" data-theme="dark" style="background: #1e1e1e;" data-check=""></a>
   <a class="theme-option" data-theme="green" style="background: #e5f5e5;" data-check=""></a>
   <a class="theme-option" data-theme="yellow" style="background: #fffde7;" data-check=""></a>
   <a class="theme-option" data-theme="green2" style="background: #d4edc9;" data-check=""></a>
+</div>
+<div id="bottom-popup">
+  {{PRE_PAGE_TAG_INNER}}
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}">Cat</a>
+  {{NEXT_PAGE_TAG_INNER}}
 </div>
 <div>
 <h1>{{STORY_TITLE}}</h1>
@@ -356,53 +388,77 @@ const readerTemplate = `<!DOCTYPE html>
 {{NEXT_PAGE_TAG}}
 {{PRE_PAGE_TAG}}
 <script>
-  function setupThemeToggle() {
-    // 防止重复初始化
-    if (window.themeToggleInitialized) {
+  function setupPopups() {
+    if (window.popupsInitialized) {
       return;
     }
+    window.popupsInitialized = true;
 
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeMenu = document.getElementById('theme-menu');
+    const themePopup = document.getElementById('theme-popup');
+    const bottomPopup = document.getElementById('bottom-popup');
+    let popupsVisible = false; // Single state for both popups
 
-    if (themeToggle && themeMenu) {
-      // 标记已初始化
-      window.themeToggleInitialized = true;
-
-      let menuVisible = false;
-
-      themeToggle.addEventListener('click', function (e) {
-        e.preventDefault();
-        menuVisible = !menuVisible;
-        themeMenu.style.display = menuVisible ? 'block' : 'none';
-      });
-
-      // 点击页面其他地方隐藏菜单
-      document.addEventListener('click', function (e) {
-        const target = e.target;
-        if (menuVisible && themeMenu.style.display === 'block' &&
-            !themeToggle.contains(target) &&
-            !themeMenu.contains(target)) {
-          menuVisible = false;
-          themeMenu.style.display = 'none';
-        }
-      });
+    function showPopups() {
+      if (!popupsVisible) {
+        popupsVisible = true;
+        themePopup.style.display = 'block';
+        bottomPopup.style.display = 'block';
+      }
     }
+
+    function hidePopups() {
+      if (popupsVisible) {
+        popupsVisible = false;
+        themePopup.style.display = 'none';
+        bottomPopup.style.display = 'none';
+      }
+    }
+
+    function togglePopups() {
+      if (popupsVisible) {
+        hidePopups();
+      } else {
+        showPopups();
+      }
+    }
+
+    // Clicking anywhere on the page
+    document.addEventListener('click', function (e) {
+      const target = e.target;
+
+      // Do nothing if clicking inside either popup
+      if (themePopup.contains(target) || bottomPopup.contains(target)) {
+        return;
+      }
+
+      // Prevent popups on clicking internal navigation links
+      if (target.tagName === 'A' && target.getAttribute('href') && target.getAttribute('href').startsWith('/')) {
+        // If popups are visible, hide them, but don't show them
+        if (popupsVisible) {
+           hidePopups();
+        }
+        return; // Do not proceed with toggle logic
+      }
+
+      // Toggle both popups on any click outside popups (and not a nav link)
+      togglePopups();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    setupThemeToggle();
-    
+    setupPopups();
     const urlParams = new URLSearchParams(window.location.search);
     const currentTheme = urlParams.get('theme') || 'default';
     const themeOptions = document.querySelectorAll('.theme-option');
-
     themeOptions.forEach(option => {
       const theme = option.getAttribute('data-theme');
       if (theme === currentTheme) {
         option.setAttribute('data-check', '✔');
       }
-      option.setAttribute('href', '?p={{PAGE_NO}}&theme=' + theme);
+      // Preserve all current parameters when switching themes
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('theme', theme);
+      option.setAttribute('href', currentUrl.toString());
     });
   });
 </script>
@@ -484,7 +540,6 @@ export default {
       default:
         return new Response("Invalid Page", { status: 404 });
     }
-
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html',
@@ -589,34 +644,43 @@ function genContentPage(namespace: string, storys: Array<StoryOverview>, content
   const contentText = curContent.content.map(e => {
     return `<p>${e}</p>`;
   }).join("");
-  let nextPageTag: string;
+
+  let nextPageTag: string = "";
+  let nextPageTagInner: string = "";
   if (nextPageNo > 0) {
+    nextPageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>`;
     nextPageTag = `<div align="center">
 <a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>
 &nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">Cat</a>
 &nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>
 </div>
 </br></br>`;
-  } else {
-    nextPageTag = "";
   }
-  let prePageTag: string;
+
+  let prePageTag: string = "";
+  let prePageTagInner: string = "";
   if (prePageNo > 0) {
+    prePageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>`;
     prePageTag = `<div align="center">
 <a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>
 &nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">Cat</a>
 &nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>
 </div>
 </br></br>`;
-  } else {
-    prePageTag = "";
   }
+
   return readerTemplate
       .replace(/{{STORY_TITLE}}/g, storyTitle)
       .replace(/{{CONTENT_TEXT}}/g, contentText)
       .replace(/{{NEXT_PAGE_TAG}}/g, nextPageTag)
       .replace(/{{PRE_PAGE_TAG}}/g, prePageTag)
+      .replace(/{{NEXT_PAGE_TAG_INNER}}/g, nextPageTagInner)
+      .replace(/{{PRE_PAGE_TAG_INNER}}/g, prePageTagInner)
       .replace(/{{PAGE_NO}}/g, curContent.pageNo.toString())
+      .replace(/{{CATALOG_PAGE}}/g, currentPageInCatalog.toString())
+      .replace(/{{NAMESPACE}}/g, namespace)
+      .replace(/{{STORY_ID}}/g, storyId)
+      .replace(/{{THEME}}/g, theme)
       .replace(/<style>/, `<style>${getThemeStyle(theme)}`);
 }
 

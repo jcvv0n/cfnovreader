@@ -6,7 +6,7 @@ const storysTemplate = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Story Overview</title>
+  <title>小说一览</title>
   <style>
     p{text-indent:10px;}
     a{font-family:SimHei;font-size:20px;letter-spacing:1px;text-decoration:none;}
@@ -47,7 +47,7 @@ const storysTemplate = `<!DOCTYPE html>
 </head>
 <body>
 <div align="center">
-<h2>Story Overview</h2>
+<h2>小说一览</h2>
 </div>
 <div align="left">
 {{STORY_OVERVIEW}}
@@ -133,7 +133,7 @@ const catalogTemplate = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catalog</title>
+  <title>目录</title>
   <style>
     p{text-indent:10px;}
     a{font-family:SimHei;font-size:20px;letter-spacing:1px;text-decoration:none;}
@@ -208,8 +208,8 @@ const catalogTemplate = `<!DOCTYPE html>
 {{STORY_CATALOG}}
 </div>
 <div class="pagination">
-  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p=1&theme={{THEME}}" title="First page" class="{{FIRST_DISABLED}}">«</a>
-  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{PREV_PAGE}}&theme={{THEME}}" title="Prev page" class="{{PREV_DISABLED}}">‹</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p=1&theme={{THEME}}" title="首页" class="{{FIRST_DISABLED}}">«</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{PREV_PAGE}}&theme={{THEME}}" title="上一页" class="{{PREV_DISABLED}}">‹</a>
   <input
     type="text"
     id="pageInput"
@@ -222,8 +222,8 @@ const catalogTemplate = `<!DOCTYPE html>
     style="width: 40px; background-color: {{INPUT_BG_COLOR}}; color: {{INPUT_TEXT_COLOR}};"
   />
   <a href="javascript:goToPage()">Go</a>
-  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{NEXT_PAGE}}&theme={{THEME}}" title="Next page" class="{{NEXT_DISABLED}}">›</a>
-  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}&theme={{THEME}}" title="Last page" class="{{LAST_DISABLED}}">»</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{NEXT_PAGE}}&theme={{THEME}}" title="下一页" class="{{NEXT_DISABLED}}">›</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{TOTAL_PAGES}}&theme={{THEME}}" title="尾页" class="{{LAST_DISABLED}}">»</a>
 </div>
 <script>
   function setupThemePopup() {
@@ -351,7 +351,7 @@ const readerTemplate = `<!DOCTYPE html>
       background: rgba(255, 255, 255, 0.9); /* Slightly transparent */
       border-top: 1px solid #ccc;
       /* Reduce padding and adjust line height */
-      padding: 5px 0;
+      padding: 10px 0;
       display: none;
       z-index: 1000;
       text-align: center;
@@ -360,7 +360,7 @@ const readerTemplate = `<!DOCTYPE html>
     #bottom-popup a {
        margin: 0 15px;
        /* Increase font size */
-       font-size: 34px;
+       font-size: 28px;
        /* Reduce line height to minimize vertical space */
        line-height: 1;
     }
@@ -376,7 +376,7 @@ const readerTemplate = `<!DOCTYPE html>
 </div>
 <div id="bottom-popup">
   {{PRE_PAGE_TAG_INNER}}
-  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}">Cat</a>
+  <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}">目录</a>
   {{NEXT_PAGE_TAG_INNER}}
 </div>
 <div>
@@ -598,7 +598,7 @@ function genStoryCatalog(namespace: string, storys: Array<StoryOverview>, conten
   const storyCatalog: string = paginatedContents.map((e: StoryContent) => {
     return `<p id="p${e.pageNo}"><a href="/r/${namespace}/cont/${storyId}?p=${e.pageNo}&theme=${theme}">${e.pageDesc}</a></p>`;
   }).join('\n');
-  const overviewPage: string = `<p><a href="/r/${namespace}/stos/1?theme=${theme}#s${story.storyId}">Story Overview</a></p>`;
+  const overviewPage: string = `<p><a href="/r/${namespace}/stos/1?theme=${theme}#s${story.storyId}">小说一览</a></p>`;
   const themeStyle = getThemeStyle(theme);
   const colors = getThemeColors(theme);
   return catalogTemplate
@@ -648,11 +648,11 @@ function genContentPage(namespace: string, storys: Array<StoryOverview>, content
   let nextPageTag: string = "";
   let nextPageTagInner: string = "";
   if (nextPageNo > 0) {
-    nextPageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>`;
+    nextPageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">下一章</a>`;
     nextPageTag = `<div align="center">
-<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>
-&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">Cat</a>
-&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">Next</a>
+<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">下一章</a>
+&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">目录</a>
+&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${nextPageNo}&theme=${theme}">下一章</a>
 </div>
 </br></br>`;
   }
@@ -660,11 +660,11 @@ function genContentPage(namespace: string, storys: Array<StoryOverview>, content
   let prePageTag: string = "";
   let prePageTagInner: string = "";
   if (prePageNo > 0) {
-    prePageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>`;
+    prePageTagInner = `<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">上一章</a>`;
     prePageTag = `<div align="center">
-<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>
-&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">Cat</a>
-&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">Prev</a>
+<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">上一章</a>
+&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cat/${storyId}?p=${currentPageInCatalog}&theme=${theme}#p${curContent.pageNo}">目录</a>
+&nbsp&nbsp&nbsp&nbsp<a href="/r/${namespace}/cont/${storyId}?p=${prePageNo}&theme=${theme}">上一章</a>
 </div>
 </br></br>`;
   }

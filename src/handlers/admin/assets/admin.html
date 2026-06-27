@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cfnovreader Admin</title>
+    <!-- prettier-ignore -->
+    <style>
+      {{ADMIN_CSS}}
+    </style>
+  </head>
+  <body>
+    <div class="header"><h1>cfnovreader 管理后台</h1></div>
+    <div class="container">
+      <div class="card">
+        <h2>认证</h2>
+        <div class="row">
+          <label>Admin Token</label>
+          <input type="password" id="token-input" placeholder="输入 ADMIN_TOKEN" />
+          <button class="btn-primary" data-action="save-token">保存</button>
+        </div>
+        <div id="auth-msg" class="msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>命名空间</h2>
+        <div class="row">
+          <label>Namespace</label>
+          <input type="text" id="ns-input" placeholder="例如: jcvv0n" />
+          <button class="btn-primary" data-action="load-stories">加载小说列表</button>
+        </div>
+        <div id="ns-msg" class="msg"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active" data-tab="stories">小说列表</div>
+        <div class="tab" data-tab="add">添加小说</div>
+        <div class="tab" data-tab="upload">上传章节</div>
+      </div>
+
+      <div class="tab-content">
+        <div class="section active" id="tab-stories">
+          <ul class="story-list" id="story-list">
+            <li style="color: #aaa; padding: 8px 0">请先输入命名空间并加载</li>
+          </ul>
+        </div>
+
+        <div class="section" id="tab-add">
+          <h2>添加小说到书目（KV）</h2>
+          <div class="row">
+            <label>小说名称</label>
+            <input type="text" id="add-name" placeholder="例如: 三体" />
+          </div>
+          <div class="row">
+            <label>小说 ID</label>
+            <input type="text" id="add-id" placeholder="例如: 103429903" />
+          </div>
+          <p class="hint">添加到书目后，再到"上传章节"Tab 上传正文内容到 R2。</p>
+          <div class="actions">
+            <button class="btn-success" data-action="add-story">添加到书目</button>
+          </div>
+          <div id="add-msg" class="msg"></div>
+        </div>
+
+        <div class="section" id="tab-upload">
+          <h2>上传章节内容到 R2</h2>
+          <div class="row">
+            <label>小说 ID</label>
+            <input type="text" id="upload-id" placeholder="例如: 103429903" />
+          </div>
+          <div class="row" style="align-items: flex-start">
+            <label style="padding-top: 6px">章节 JSON</label>
+            <textarea
+              id="upload-json"
+              placeholder='粘贴 JSON，支持两种格式：&#10;&#10;数组格式：[{"title":"第一章","content":["段落1","段落2"]}]&#10;&#10;对象格式：{"items":[{"title":"第一章","content":["段落1"]}]}'
+            ></textarea>
+          </div>
+          <div class="row">
+            <label>或上传文件</label>
+            <input type="file" id="upload-file" accept=".json" />
+          </div>
+          <p class="hint">会覆盖该小说 ID 现有的 R2 内容。上传后立即生效。</p>
+          <div class="actions">
+            <button class="btn-success" data-action="upload-chapters">上传到 R2</button>
+          </div>
+          <div id="upload-msg" class="msg"></div>
+        </div>
+      </div>
+    </div>
+    <!-- prettier-ignore -->
+    <script>{{ADMIN_JS}}</script>
+  </body>
+</html>

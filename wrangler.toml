@@ -8,3 +8,12 @@ kv_namespaces = [
 r2_buckets = [
   { binding = "NOV_BUCKET", bucket_name = "r2-id" }
 ]
+
+# 允许直接 import HTML / CSS / JS 文本，详见 src/templates 与 src/handlers/admin/assets
+rules = [
+  { type = "Text", globs = ["**/*.html", "**/*.css", "**/*.client.js"], fallthrough = true },
+]
+
+[vars]
+# 本地开发默认 token，生产环境请运行: wrangler secret put ADMIN_TOKEN
+ADMIN_TOKEN = "dev-token"

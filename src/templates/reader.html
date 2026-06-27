@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="{{THEME}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{STORY_TITLE}}</title>
+    <style>
+      {{THEME_STYLE}}
+      p{font-family:SimHei;font-size:22px;line-height:2.0;letter-spacing:2px;text-indent:48px;}
+      a{font-family:SimHei;font-size:24px;text-decoration:none;}
+      #theme-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid #ccc;
+        padding: 0;
+        display: none;
+        z-index: 1000;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      .theme-option {
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        margin: 0 5px;
+        position: relative;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        vertical-align: top;
+      }
+      .theme-option::before {
+        content: attr(data-check);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        color: red;
+      }
+      #bottom-popup {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        border-top: 1px solid #ccc;
+        padding: 10px 0;
+        display: none;
+        z-index: 1000;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      #bottom-popup a {
+         margin: 0 15px;
+         font-size: 28px;
+         line-height: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="theme-popup">{{THEME_OPTIONS}}</div>
+    <div id="bottom-popup">
+      {{PRE_PAGE_TAG_INNER}}
+      <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}"
+        >目录</a
+      >
+      {{NEXT_PAGE_TAG_INNER}}
+    </div>
+    <div>
+      <h1>{{STORY_TITLE}}</h1>
+    </div>
+    <div align="text">{{CONTENT_TEXT}}</div>
+    {{NEXT_PAGE_TAG}} {{PRE_PAGE_TAG}}
+    <script>
+      function setupPopups() {
+        if (window.popupsInitialized) return;
+        window.popupsInitialized = true;
+
+        const themePopup = document.getElementById('theme-popup');
+        const bottomPopup = document.getElementById('bottom-popup');
+        let popupsVisible = false;
+
+        function showPopups() {
+          if (!popupsVisible) {
+            popupsVisible = true;
+            themePopup.style.display = 'block';
+            bottomPopup.style.display = 'block';
+          }
+        }
+
+        function hidePopups() {
+          if (popupsVisible) {
+            popupsVisible = false;
+            themePopup.style.display = 'none';
+            bottomPopup.style.display = 'none';
+          }
+        }
+
+        function togglePopups() {
+          if (popupsVisible) hidePopups();
+          else showPopups();
+        }
+
+        document.addEventListener('dblclick', function (e) {
+          const target = e.target;
+          if (themePopup.contains(target) || bottomPopup.contains(target)) return;
+          if (
+            target.tagName === 'A' &&
+            target.getAttribute('href') &&
+            target.getAttribute('href').startsWith('/')
+          ) {
+            if (popupsVisible) hidePopups();
+            return;
+          }
+          togglePopups();
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        setupPopups();
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentTheme = urlParams.get('theme') || 'default';
+        document.querySelectorAll('.theme-option').forEach(function (option) {
+          const theme = option.getAttribute('data-theme');
+          if (theme === currentTheme) option.setAttribute('data-check', '✔');
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set('theme', theme);
+          option.setAttribute('href', currentUrl.toString());
+        });
+      });
+    </script>
+  </body>
+</html>

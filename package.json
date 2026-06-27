@@ -1,9 +1,18 @@
 {
   "name": "cfnovreader",
   "version": "0.0.1",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "npx wrangler dev"
+    "dev": "npx wrangler dev",
+    "seed": "node scripts/seed.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.{ts,html,css,client.js}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,client.js}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "jcvv0n",
@@ -11,11 +20,16 @@
   "description": "",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250627.0",
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.4",
     "typescript": "^5.8.3",
+    "vitest": "^4.1.9",
     "wrangler": "^4.22.0"
   },
   "dependencies": {
-    "flatbuffers": "^25.2.10",
     "miniflare": "^4.20250617.4"
   }
 }

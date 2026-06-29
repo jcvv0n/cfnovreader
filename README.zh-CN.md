@@ -5,7 +5,7 @@
 一个运行在 **Cloudflare Workers** 上的轻量小说阅读器。HTML 在边缘节点渲染,内容存于 Cloudflare **KV** + **R2**。没有服务器、没有 SSR 框架——只有一个用模板拼装页面的 Worker。
 
 - **边缘渲染**:每个请求都由离用户最近的 Worker 处理。
-- **分块存储**:每章是一个独立的小体积 gzipped JSON 对象,按需读取。
+- **分块存储**:多章打包成小体积 gzipped R2 shard object,按需读取。
 - **按 namespace 隔离书单**:通过 URL 中的 namespace 区分多个书库。
 - **内置管理后台**:一个单文件管理界面,token 鉴权。
 
@@ -13,27 +13,27 @@
 
 ## 工作原理
 
-每章是一个独立的 R2 object。阅读器**只拉取需要的那一章**(几 KB),绝不拉整本。章节号就是数组下标——`1..count` 连续整数——所以翻上一章/下一章是纯算术(`N+1` / `N-1`)。没有章节级 ID、没有稀疏编号、没有"跳到第 X 章"。
+章节按固定数量打包成 R2 shard object。阅读器**只拉取目标章节所在的 shard**,绝不拉整本。章节号就是数组下标——`1..count` 连续整数——所以翻上一章/下一章是纯算术(`N+1` / `N-1`)。没有章节级 ID、没有稀疏编号、没有"跳到第 X 章"。
 
-一份小元数据(章节数 + 标题列表)存在 KV 里,**只被目录页读取**。最高频路径——读正文——既不读元数据也不碰其它章节。
+一份小元数据(章节数 + 标题列表 + 存储布局)存在 KV 里。目录页用它展示标题;正文页用它定位章节所在 shard 并判断末章。
 
 ### 存储结构
 
 ```
 KV   story_overview:{namespace}   →  [{storyId, storyName}, ...]    书单
-KV   story_meta:{storyId}          →  {count, titles:[...]}          目录页专用元数据
-R2   story:{storyId}:{N}          →  单章 gzipped JSON {title, content}   (N = 1..count)
+KV   story_meta:{storyId}          →  {count, titles:[...], storage:{...}}  元数据
+R2   story:{storyId}:shard:{N}    →  最多 100 章,gzipped JSON {chapters:[...]}
 ```
 
-| 页面              | 读取                                  | 说明                         |
-| ----------------- | ------------------------------------- | ---------------------------- |
-| 书单一览 (`stos`) | KV `story_overview`                   | 列出该 namespace 下所有书    |
-| 目录 (`cat`)      | 仅 KV `story_meta`                    | 内存分页(每页 10 章);不碰 R2 |
-| 正文 (`cont`)     | R2 `story:{id}:{N}` + KV `meta.count` | 单章;`count` 仅用于判断末章  |
+| 页面              | 读取                                       | 说明                         |
+| ----------------- | ------------------------------------------ | ---------------------------- |
+| 书单一览 (`stos`) | KV `story_overview`                        | 列出该 namespace 下所有书    |
+| 目录 (`cat`)      | 仅 KV `story_meta`                         | 内存分页(每页 10 章);不碰 R2 |
+| 正文 (`cont`)     | KV `story_meta` + R2 `story:{id}:shard:{N}` | 一个 shard;`count` 判断末章  |
 
 - **上一章/下一章**:`N-1` / `N+1`;当 `N === count` 时隐藏"下一章"。
-- **删除整本**:读 `meta.count` → 并发删 `story:{id}:1..count` → 删 meta。
-- **更新单章**:覆盖 `story:{id}:{N}` 即可,无需重写整本。
+- **删除整本**:读 `story_meta` → 批量删除对应 shard objects → 删 meta。
+- **更新单章**:重写该章节所在 shard,无需重写整本。
 
 ### 压缩
 

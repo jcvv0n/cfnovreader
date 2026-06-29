@@ -1,5 +1,5 @@
 // /r/{namespace}/cont/{storyId}?p=N 处理：正文页 + 上一章/下一章/目录导航。
-// 弱化 pageNo：直接 R2.get('story:{storyId}:{N}') 单章（自含 title+content）；
+// 弱化 pageNo：按章节号定位 R2 shard，再取 shard 内单章；
 // 上一章 N-1、下一章 N+1 纯算；判尾章读 KV meta.count。
 
 import readerTemplate from '../templates/reader.html';
@@ -22,10 +22,10 @@ export const readerHandler: RouteHandler = async (request, env, params) => {
 
   const pageNo = parsePageNo(url.searchParams.get('p'), 1);
 
-  const chapter = await getChapter(env.NOV_BUCKET, storyId, pageNo);
+  const meta = await getStoryMeta(env.NOV_KV, storyId);
+  const chapter = await getChapter(env.NOV_BUCKET, storyId, pageNo, meta);
   if (!chapter) throw notFound('Invalid PageNo');
 
-  const meta = await getStoryMeta(env.NOV_KV, storyId);
   const count = meta?.count ?? pageNo;
   const hasPrev = pageNo > 1;
   const hasNext = pageNo < count;

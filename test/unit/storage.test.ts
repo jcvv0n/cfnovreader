@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { gunzipSync, gzipSync } from 'node:zlib';
-import { getChapter, putStory, buildMeta, deleteStoryChapters } from '../../src/storage/r2';
+import {
+  getChapter,
+  putStory,
+  buildMeta,
+  deleteStoryChapters,
+  SHARD_CHAPTER_COUNT,
+} from '../../src/storage/r2';
 import type { Chapter } from '../../src/storage/models';
 
 // 内存版 R2Bucket mock：key → Uint8Array。
@@ -14,8 +20,10 @@ class FakeR2 implements R2Bucket {
     this.store.set(key, value instanceof Uint8Array ? value : new Uint8Array(value as ArrayBuffer));
     return null as unknown as R2Object;
   }
-  async delete(key: string) {
-    this.store.delete(key);
+  async delete(keys: string | string[]) {
+    for (const key of Array.isArray(keys) ? keys : [keys]) {
+      this.store.delete(key);
+    }
   }
 }
 
@@ -27,30 +35,37 @@ function mkChapters(n: number): Chapter[] {
 }
 
 describe('分块存储 round-trip', () => {
-  it('putStory 后 getChapter 能读回单章，key 为 story:{id}:{N}', async () => {
+  it('putStory 后 getChapter 能从 shard 读回单章', async () => {
     const r2 = new FakeR2();
-    const chapters = mkChapters(3);
+    const chapters = mkChapters(SHARD_CHAPTER_COUNT + 3);
     const count = await putStory(r2, 's1', chapters);
-    expect(count).toBe(3);
+    const meta = buildMeta(chapters);
+    expect(count).toBe(SHARD_CHAPTER_COUNT + 3);
 
-    expect(r2.store.size).toBe(3);
-    expect(r2.store.has('story:s1:1')).toBe(true);
-    expect(r2.store.has('story:s1:2')).toBe(true);
-    expect(r2.store.has('story:s1:3')).toBe(true);
+    expect(r2.store.size).toBe(2);
+    expect(r2.store.has('story:s1:shard:1')).toBe(true);
+    expect(r2.store.has('story:s1:shard:2')).toBe(true);
 
-    const ch1 = await getChapter(r2, 's1', 1);
+    const ch1 = await getChapter(r2, 's1', 1, meta);
     expect(ch1?.title).toBe('第1章');
     expect(ch1?.content).toEqual(['段落1-1', '段落1-2']);
-    const ch3 = await getChapter(r2, 's1', 3);
-    expect(ch3?.title).toBe('第3章');
+    const last = await getChapter(r2, 's1', SHARD_CHAPTER_COUNT + 3, meta);
+    expect(last?.title).toBe(`第${SHARD_CHAPTER_COUNT + 3}章`);
   });
 
-  it('单章 object 是 gzipped JSON', async () => {
+  it('shard object 是 gzipped JSON', async () => {
     const r2 = new FakeR2();
     await putStory(r2, 's1', [{ title: 'X', content: ['hi'] }]);
-    const raw = r2.store.get('story:s1:1')!;
+    const raw = r2.store.get('story:s1:shard:1')!;
     const json = JSON.parse(gunzipSync(raw).toString('utf8'));
-    expect(json).toEqual({ title: 'X', content: ['hi'] });
+    expect(json).toEqual({ chapters: [{ title: 'X', content: ['hi'] }] });
+  });
+
+  it('没有新 meta 时兼容读取旧版单章 object', async () => {
+    const r2 = new FakeR2();
+    r2.store.set('story:s1:1', gzipSync(JSON.stringify({ title: '旧章', content: ['old'] })));
+    const ch = await getChapter(r2, 's1', 1);
+    expect(ch).toEqual({ title: '旧章', content: ['old'] });
   });
 
   it('getChapter 不存在返回 null', async () => {
@@ -62,13 +77,23 @@ describe('分块存储 round-trip', () => {
     const meta = buildMeta(mkChapters(3));
     expect(meta.count).toBe(3);
     expect(meta.titles).toEqual(['第1章', '第2章', '第3章']);
+    expect(meta.storage).toEqual({ kind: 'r2-sharded', shardSize: SHARD_CHAPTER_COUNT, shardCount: 1 });
   });
 
-  it('deleteStoryChapters 按 count 删除所有章节', async () => {
+  it('deleteStoryChapters 按 shard 删除新格式内容', async () => {
     const r2 = new FakeR2();
-    await putStory(r2, 's1', mkChapters(5));
-    expect(r2.store.size).toBe(5);
-    await deleteStoryChapters(r2, 's1', 5);
+    const chapters = mkChapters(SHARD_CHAPTER_COUNT + 1);
+    await putStory(r2, 's1', chapters);
+    expect(r2.store.size).toBe(2);
+    await deleteStoryChapters(r2, 's1', buildMeta(chapters));
+    expect(r2.store.size).toBe(0);
+  });
+
+  it('deleteStoryChapters 批量删除旧版单章内容', async () => {
+    const r2 = new FakeR2();
+    r2.store.set('story:s1:1', gzipSync('{}'));
+    r2.store.set('story:s1:2', gzipSync('{}'));
+    await deleteStoryChapters(r2, 's1', { count: 2 });
     expect(r2.store.size).toBe(0);
   });
 

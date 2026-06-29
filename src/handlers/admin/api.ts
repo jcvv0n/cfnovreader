@@ -41,10 +41,10 @@ export async function deleteStoryAPI(body: Record<string, unknown>, env: Env): P
   const next = stories.filter((s: StoryOverview) => s.storyId !== storyId);
   await saveStories(env.NOV_KV, namespace, next);
 
-  // 清理 R2 分块 + KV meta（旧的整存格式读不到 count，跳过分块删除）
+  // 清理 R2 内容 + KV meta；旧单章格式也走批量 delete，避免按章产生大量 API 调用。
   const meta = await getStoryMeta(env.NOV_KV, storyId);
   if (meta) {
-    await deleteStoryChapters(env.NOV_BUCKET, storyId, meta.count);
+    await deleteStoryChapters(env.NOV_BUCKET, storyId, meta);
     await deleteStoryMeta(env.NOV_KV, storyId);
   }
   return jsonOk();
@@ -56,10 +56,10 @@ export async function uploadStoryAPI(body: Record<string, unknown>, env: Env): P
   if (!Array.isArray(chapters)) throw badRequest('缺少 chapters');
   if (chapters.length === 0) return jsonError('章节列表为空');
   try {
-    // 上传覆盖：若已有旧分块，先按旧 count 清理，避免残留多余章节
+    // 上传覆盖：若已有旧内容，先按旧 meta 清理，避免旧 shard / 旧单章 object 残留。
     const oldMeta = await getStoryMeta(env.NOV_KV, storyId);
-    if (oldMeta && oldMeta.count > chapters.length) {
-      await deleteStoryChapters(env.NOV_BUCKET, storyId, oldMeta.count);
+    if (oldMeta) {
+      await deleteStoryChapters(env.NOV_BUCKET, storyId, oldMeta);
     }
     await putStory(env.NOV_BUCKET, storyId, chapters as Chapter[]);
     await putStoryMeta(env.NOV_KV, storyId, buildMeta(chapters as Chapter[]));

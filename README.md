@@ -5,7 +5,7 @@
 A lightweight novel reader running on **Cloudflare Workers**. HTML is rendered at the edge; content is stored in Cloudflare **KV** + **R2**. No server, no SSR framework — just a Worker that assembles pages from templates.
 
 - **Edge-rendered**: every request is served by a Worker close to the user.
-- **Chunked storage**: each chapter is one small gzipped JSON object in R2, read individually.
+- **Chunked storage**: chapters are grouped into small gzipped shard objects in R2.
 - **Per-namespace bookshelves**: multiple libraries isolated by URL namespace.
 - **Built-in admin**: a single-file management UI behind a token.
 
@@ -13,27 +13,27 @@ A lightweight novel reader running on **Cloudflare Workers**. HTML is rendered a
 
 ## How it works
 
-Each chapter is a standalone R2 object. The reader fetches **only the chapter it needs** (a few KB), never the whole book. A chapter's number is just its array index — `1..count`, continuous — so flipping to the next/previous chapter is pure arithmetic (`N+1` / `N-1`). There is no per-chapter ID, no sparse numbering, no "jump to chapter X".
+Chapters are grouped into fixed-size R2 shard objects. The reader fetches **only the shard containing the requested chapter**, never the whole book. A chapter's number is just its array index — `1..count`, continuous — so flipping to the next/previous chapter is pure arithmetic (`N+1` / `N-1`). There is no per-chapter ID, no sparse numbering, no "jump to chapter X".
 
-A small metadata record (chapter count + titles) lives in KV and is only read by the **catalog page**. The hot path — reading a chapter's text — touches neither the metadata nor any other chapter.
+A small metadata record (chapter count + titles + storage layout) lives in KV. Catalog pages use it for titles; reader pages use it to locate the chapter's shard and detect the last chapter.
 
 ### Storage layout
 
 ```
 KV   story_overview:{namespace}   →  [{storyId, storyName}, ...]    bookshelf
-KV   story_meta:{storyId}          →  {count, titles:[...]}          catalog-only metadata
-R2   story:{storyId}:{N}          →  single chapter, gzipped JSON {title, content}   (N = 1..count)
+KV   story_meta:{storyId}          →  {count, titles:[...], storage:{...}}  metadata
+R2   story:{storyId}:shard:{N}    →  up to 100 chapters, gzipped JSON {chapters:[...]}
 ```
 
-| Page              | Reads                                 | Notes                                                   |
-| ----------------- | ------------------------------------- | ------------------------------------------------------- |
-| Overview (`stos`) | KV `story_overview`                   | lists every book in the namespace                       |
-| Catalog (`cat`)   | KV `story_meta` only                  | paginates titles in memory (10/page); never touches R2  |
-| Reader (`cont`)   | R2 `story:{id}:{N}` + KV `meta.count` | single chapter; `count` only to detect the last chapter |
+| Page              | Reads                                      | Notes                                                  |
+| ----------------- | ------------------------------------------ | ------------------------------------------------------ |
+| Overview (`stos`) | KV `story_overview`                        | lists every book in the namespace                      |
+| Catalog (`cat`)   | KV `story_meta` only                       | paginates titles in memory (10/page); never touches R2 |
+| Reader (`cont`)   | KV `story_meta` + R2 `story:{id}:shard:{N}` | one shard; `count` detects the last chapter            |
 
 - **Next/previous chapter**: `N+1` / `N-1`; hides "next" when `N === count`.
-- **Delete a book**: read `meta.count` → delete `story:{id}:1..count` (concurrent) → delete `meta`.
-- **Update one chapter**: overwrite `story:{id}:{N}` — no need to rewrite the whole book.
+- **Delete a book**: read `story_meta` → delete its shard objects in batches → delete `meta`.
+- **Update one chapter**: rewrite the shard containing that chapter, not the whole book.
 
 ### Compression
 

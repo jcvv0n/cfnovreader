@@ -140,9 +140,15 @@ vite.config.ts.timestamp-*
 
 # wrangler
 .wrangler/
+.dev.vars
 
 # WebStorm
 .idea/
 
 # testdata
 testdata/
+
+# cfnovreader generated / stray artifacts (本地大测试数据、旧二进制均放 tmp/)
+tmp/
+*.bin
+story_content:*

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="{{THEME}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小说一览</title>
+    <style>
+      {{THEME_STYLE}}
+      p{text-indent:10px;}
+      a{font-family:SimHei;font-size:20px;letter-spacing:1px;text-decoration:none;}
+      #theme-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid #ccc;
+        padding: 0;
+        display: none;
+        z-index: 1000;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      .theme-option {
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        margin: 0 5px;
+        position: relative;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        vertical-align: top;
+      }
+      .theme-option::before {
+        content: attr(data-check);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div align="center">
+      <h2>小说一览</h2>
+    </div>
+    <div align="left">{{STORY_OVERVIEW}}</div>
+    <div id="theme-popup">{{THEME_OPTIONS}}</div>
+    <script>
+      function setupThemePopup() {
+        if (window.themePopupInitialized) return;
+        window.themePopupInitialized = true;
+
+        const themePopup = document.getElementById('theme-popup');
+        let popupVisible = false;
+
+        function togglePopup() {
+          popupVisible = !popupVisible;
+          themePopup.style.display = popupVisible ? 'block' : 'none';
+        }
+
+        function hidePopup() {
+          popupVisible = false;
+          themePopup.style.display = 'none';
+        }
+
+        document.addEventListener('dblclick', function (e) {
+          const target = e.target;
+          if (themePopup.contains(target)) return;
+          if (
+            target.tagName === 'A' &&
+            target.getAttribute('href') &&
+            target.getAttribute('href').startsWith('/')
+          ) {
+            if (popupVisible) hidePopup();
+            return;
+          }
+          if (popupVisible) {
+            hidePopup();
+            return;
+          }
+          togglePopup();
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        setupThemePopup();
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentTheme = urlParams.get('theme') || 'default';
+        document.querySelectorAll('.theme-option').forEach(function (option) {
+          const theme = option.getAttribute('data-theme');
+          if (theme === currentTheme) option.setAttribute('data-check', '✔');
+          option.setAttribute('href', '?theme=' + theme);
+        });
+      });
+    </script>
+  </body>
+</html>

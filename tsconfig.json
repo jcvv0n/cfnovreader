@@ -2,7 +2,15 @@
   "compilerOptions": {
     "target": "es2021",
     "module": "esnext",
-    "lib": ["es2021", "DOM"],
-    "types": ["@cloudflare/workers-types/global"]
-  }
+    "moduleResolution": "bundler",
+    "lib": ["es2021"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

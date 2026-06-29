@@ -64,6 +64,11 @@ Append `&theme=<name>` to any public page to switch theme.
 | `/_cfnov_admin/api/story/upload` | POST   | Upload chapters → chunked R2 + meta    |
 
 Admin API calls require an `X-Admin-Token` header matching `ADMIN_TOKEN`.
+Use `npx wrangler secret put ADMIN_TOKEN` for remote deployments. For local development, put a disposable value in `.dev.vars`:
+
+```dotenv
+ADMIN_TOKEN=dev-token
+```
 
 ---
 
@@ -143,10 +148,16 @@ kv_namespaces = [ { binding = "NOV_KV", id = "KV_ID" } ]        # replace KV_ID
 r2_buckets   = [ { binding = "NOV_BUCKET", bucket_name = "r2-id" } ]  # replace r2-id
 ```
 
-For the admin token, **do not** keep the real value in `wrangler.toml` for production — set it as a secret:
+For the admin token, **do not** keep the real value in `wrangler.toml`. Set it as a secret for remote deployments:
 
 ```bash
 npx wrangler secret put ADMIN_TOKEN
+```
+
+For local development, create `.dev.vars` with a disposable token:
+
+```dotenv
+ADMIN_TOKEN=dev-token
 ```
 
 ---

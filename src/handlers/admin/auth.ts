@@ -1,5 +1,5 @@
 // Admin token 鉴权。
-// 生产环境从 wrangler secret 注入；本地用 wrangler.toml [vars].ADMIN_TOKEN。
+// 生产环境从 wrangler secret 注入；本地用 .dev.vars。
 
 import type { Env } from '../../types';
 import { unauthorized } from '../../http';

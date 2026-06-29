@@ -94,7 +94,8 @@
 
   async function deleteStory(storyId) {
     const ns = getNs();
-    if (!confirm('确认从书目中删除该小说？（R2 内容不会删除）')) return;
+    if (!confirm('确认删除该小说？这会从当前书目移除，并删除对应的 R2 章节分块和 KV meta。'))
+      return;
     const res = await api('/api/story/delete', { namespace: ns, storyId });
     if (res.ok) loadStories();
     else alert(res.error || '删除失败');

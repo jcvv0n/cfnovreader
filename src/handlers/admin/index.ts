@@ -4,9 +4,15 @@ import adminHtml from './assets/admin.html';
 import adminCss from './assets/admin.css';
 import adminJs from './assets/admin.client.js';
 import { render } from '../../render';
-import { badRequest, htmlResponse, jsonError, textResponse, toErrorResponse } from '../../http';
+import { badRequest, htmlResponse, jsonError, textResponse, HttpError } from '../../http';
 import { requireAdmin } from './auth';
-import { createStoryAPI, deleteStoryAPI, listStoriesAPI, uploadStoryAPI } from './api';
+import {
+  createStoryAPI,
+  deleteStoryAPI,
+  listStoriesAPI,
+  MAX_UPLOAD_BYTES,
+  uploadStoryAPI,
+} from './api';
 import type { Env } from '../../types';
 
 const ADMIN_BASE = '/_cfnov_admin';
@@ -29,12 +35,22 @@ export async function handleAdmin(request: Request, env: Env): Promise<Response>
 
     requireAdmin(request, env);
 
+    const contentLength = Number(request.headers.get('content-length'));
+    if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_BYTES + 64 * 1024) {
+      throw badRequest('请求体不能超过 5 MB');
+    }
+
     let body: Record<string, unknown>;
+    let parsed: unknown;
     try {
-      body = await request.json();
+      parsed = await request.json();
     } catch {
       throw badRequest('Invalid JSON body');
     }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw badRequest('JSON body 必须是对象');
+    }
+    body = parsed as Record<string, unknown>;
 
     switch (subPath) {
       case '/api/stories':
@@ -49,12 +65,8 @@ export async function handleAdmin(request: Request, env: Env): Promise<Response>
         return jsonError('Not found', 404);
     }
   } catch (err) {
-    // HttpError → 对应状态；其它异常 → 500。Admin API 习惯返回 {ok, error}，
-    // 这里给 401/400 也回 JSON，保持前端解析一致。
-    const resp = toErrorResponse(err);
-    if (resp.headers.get('Content-Type')?.startsWith('text/plain')) {
-      return jsonError(await resp.text(), resp.status);
-    }
-    return resp;
+    // HttpError → 对应状态码；其余异常 → 500 固定文案，不泄漏内部细节。
+    if (err instanceof HttpError) return jsonError(err.message, err.status);
+    return jsonError('Internal Error', 500);
   }
 }

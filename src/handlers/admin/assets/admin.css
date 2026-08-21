@@ -82,6 +82,10 @@ button {
   background: #3498db;
   color: white;
 }
+.btn-secondary {
+  background: #7f8c8d;
+  color: white;
+}
 .btn-danger {
   background: #e74c3c;
   color: white;
@@ -92,6 +96,18 @@ button {
 }
 button:hover {
   opacity: 0.85;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+button:focus-visible,
+.tab:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+.tag-link:focus-visible {
+  outline: 3px solid #2271b3;
+  outline-offset: 2px;
 }
 .story-list {
   list-style: none;
@@ -146,6 +162,7 @@ button:hover {
   display: flex;
   gap: 4px;
   margin-bottom: 0;
+  overflow-x: auto;
 }
 .tab {
   padding: 7px 16px;
@@ -156,6 +173,7 @@ button:hover {
   color: #555;
   border: 1px solid #ccc;
   border-bottom: none;
+  flex: 0 0 auto;
 }
 .tab.active {
   background: white;
@@ -176,6 +194,9 @@ button:hover {
 .section.active {
   display: block;
 }
+.section[hidden] {
+  display: none;
+}
 .hint {
   font-size: 11px;
   color: #999;
@@ -183,4 +204,54 @@ button:hover {
 }
 .actions {
   margin-top: 12px;
+}
+.upload-preview {
+  display: none;
+  padding: 8px 10px;
+  margin-top: 10px;
+  border-radius: 4px;
+  background: #f4f7fa;
+  color: #506070;
+  font-size: 12px;
+}
+.upload-preview.ok,
+.upload-preview.err {
+  display: block;
+}
+.upload-preview.err {
+  background: #f8d7da;
+  color: #721c24;
+}
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+  margin-top: 8px;
+  color: #666;
+  font-size: 12px;
+}
+.upload-progress progress {
+  width: 180px;
+  max-width: 100%;
+}
+
+@media (max-width: 560px) {
+  .container {
+    margin-top: 16px;
+    padding: 0 10px;
+  }
+  .card,
+  .tab-content {
+    padding: 14px;
+  }
+  label {
+    width: 100%;
+  }
+  .row input[type='text'],
+  .row input[type='password'],
+  .row textarea,
+  .row input[type='file'] {
+    flex-basis: 100%;
+  }
 }

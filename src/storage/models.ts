@@ -19,6 +19,8 @@ export interface StoryStorageMeta {
   kind: 'r2-sharded';
   shardSize: number;
   shardCount: number;
+  /** 新版上传使用独立版本前缀；缺省时兼容旧的固定 shard key。 */
+  version?: string;
 }
 
 /** 小说级元数据，存 KV。目录页专用：标题数组 + 总章数。 */

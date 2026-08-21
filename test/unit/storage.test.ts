@@ -5,6 +5,8 @@ import {
   putStory,
   buildMeta,
   deleteStoryChapters,
+  deleteAllStoryObjects,
+  createStorageVersion,
   SHARD_CHAPTER_COUNT,
 } from '../../src/storage/r2';
 import type { Chapter } from '../../src/storage/models';
@@ -24,6 +26,14 @@ class FakeR2 implements R2Bucket {
     for (const key of Array.isArray(keys) ? keys : [keys]) {
       this.store.delete(key);
     }
+  }
+  async list(options: R2ListOptions = {}) {
+    const keys = [...this.store.keys()].filter((key) => !options.prefix || key.startsWith(options.prefix));
+    return {
+      objects: keys.map((key) => ({ key }) as R2Object),
+      delimitedPrefixes: [],
+      truncated: false,
+    };
   }
 }
 
@@ -95,6 +105,30 @@ describe('分块存储 round-trip', () => {
     r2.store.set('story:s1:2', gzipSync('{}'));
     await deleteStoryChapters(r2, 's1', { count: 2 });
     expect(r2.store.size).toBe(0);
+  });
+
+  it('版本化 shard 写入不会覆盖旧布局，并可按 meta 删除', async () => {
+    const r2 = new FakeR2();
+    const chapters = mkChapters(2);
+    const version = createStorageVersion();
+    await putStory(r2, 's1', chapters, { version });
+    const meta = buildMeta(chapters, version);
+
+    expect(r2.store.has(`story:s1:shard:${version}:1`)).toBe(true);
+    expect(await getChapter(r2, 's1', 2, meta)).toEqual(chapters[1]);
+    await deleteStoryChapters(r2, 's1', meta);
+    expect(r2.store.size).toBe(0);
+  });
+
+  it('可以清理同一 storyId 下的所有版本和旧布局对象', async () => {
+    const r2 = new FakeR2();
+    r2.store.set('story:s1:1', gzipSync('{}'));
+    await putStory(r2, 's1', mkChapters(1), { version: 'v1' });
+    r2.store.set('story:s2:1', gzipSync('{}'));
+    r2.store.set('story:s1:other:1', gzipSync('{}'));
+
+    await deleteAllStoryObjects(r2, 's1');
+    expect([...r2.store.keys()]).toEqual(['story:s2:1', 'story:s1:other:1']);
   });
 
   it('gzip 可往返（验证 CompressionStream 路径在 node 下等价）', () => {

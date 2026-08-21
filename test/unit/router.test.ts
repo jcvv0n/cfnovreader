@@ -28,4 +28,13 @@ describe('matchRoute', () => {
     // 末尾斜杠不匹配（与原正则一致）
     expect(matchRoute(routes, '/r/jcvv0n/stos/1/')).toBeNull();
   });
+
+  it('解码 URL 路径参数，支持编码后的非 ASCII / 特殊字符', () => {
+    const m = matchRoute(routes, '/r/%E6%B5%8B%E8%AF%95/cat/a%2Fb%3Fc');
+    expect(m!.params).toEqual({ namespace: '测试', storyId: 'a/b?c' });
+  });
+
+  it('非法百分号编码不匹配路由', () => {
+    expect(matchRoute(routes, '/r/%E0%A4/cat/id')).toBeNull();
+  });
 });

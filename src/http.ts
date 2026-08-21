@@ -36,14 +36,13 @@ export function jsonResponse(data: unknown, status = 200): Response {
 }
 
 export const jsonOk = (data: object = {}) => jsonResponse({ ok: true, ...data });
-export const jsonError = (error: string, status = 200) =>
+export const jsonError = (error: string, status = 400) =>
   jsonResponse({ ok: false, error }, status);
 
-/** 把抛出的 HttpError 或其它异常映射为响应；其它异常一律 500 并把消息透出（admin 可见，但不含堆栈）。 */
+/** 把抛出的 HttpError 或其它异常映射为响应；非 HttpError 一律返回固定文案，不泄漏内部细节。 */
 export function toErrorResponse(err: unknown): Response {
   if (err instanceof HttpError) return textResponse(err.message, err.status);
-  const msg = err instanceof Error ? err.message : String(err);
-  return textResponse(`Internal Error: ${msg}`, 500);
+  return textResponse('Internal Error', 500);
 }
 
 /** 解析 ?p= 翻页参数。失败抛 HttpError 让上层统一处理。 */
@@ -59,6 +58,6 @@ export function parsePageNo(input: string | null, fallback = 1): number {
 /** 必填字符串字段：admin API body 用。 */
 export function requireStr(obj: Record<string, unknown>, key: string): string {
   const v = obj[key];
-  if (typeof v !== 'string' || v.length === 0) throw badRequest(`缺少必填字段: ${key}`);
+  if (typeof v !== 'string' || v.trim().length === 0) throw badRequest(`缺少必填字段: ${key}`);
   return v;
 }

@@ -17,22 +17,26 @@
 
 一份小元数据(章节数 + 标题列表 + 存储布局)存在 KV 里。目录页用它展示标题;正文页用它定位章节所在 shard 并判断末章。
 
+namespace 只隔离书单;章节正文和元数据刻意以 `storyId` 作为身份,因此同一个 storyId 可以在多个 namespace 复用。
+
 ### 存储结构
 
 ```
 KV   story_overview:{namespace}   →  [{storyId, storyName}, ...]    书单
 KV   story_meta:{storyId}          →  {count, titles:[...], storage:{...}}  元数据
-R2   story:{storyId}:shard:{N}    →  最多 100 章,gzipped JSON {chapters:[...]}
+R2   story:{storyId}:shard:{version}:{N} → 最多 100 章,gzipped JSON {chapters:[...]}
+     story:{storyId}:shard:{N}           → 旧 shard 布局(兼容读取/删除)
 ```
 
 | 页面              | 读取                                       | 说明                         |
 | ----------------- | ------------------------------------------ | ---------------------------- |
 | 书单一览 (`stos`) | KV `story_overview`                        | 列出该 namespace 下所有书    |
 | 目录 (`cat`)      | 仅 KV `story_meta`                         | 内存分页(每页 10 章);不碰 R2 |
-| 正文 (`cont`)     | KV `story_meta` + R2 `story:{id}:shard:{N}` | 一个 shard;`count` 判断末章  |
+| 正文 (`cont`)     | KV `story_meta` + 版本化 R2 shard          | 一个 shard;`count` 判断末章  |
 
 - **上一章/下一章**:`N-1` / `N+1`;当 `N === count` 时隐藏"下一章"。
-- **删除整本**:读 `story_meta` → 批量删除对应 shard objects → 删 meta。
+- **删除整本**:从书单移除 → 按 `storyId` 批量删除所有 R2 对象 → 删 meta。
+- **替换整本**:先写入新版本,全部 shard 完成后再切换 `meta`;旧版本保留到整本删除,避免 KV 传播期间旧读者读不到正文。
 - **更新单章**:重写该章节所在 shard,无需重写整本。
 
 ### 压缩
@@ -82,7 +86,7 @@ src/
 │  ├─ models.ts          StoryOverview / Chapter / StoryMeta
 │  ├─ kv.ts              story_overview + story_meta 增删改查
 │  └─ r2.ts              单章 get/put/delete、gzip 工具
-├─ templates/            stories.html / catalog.html / reader.html
+├─ templates/            public HTML + theme.client.js / reader.client.js
 └─ handlers/
    ├─ stories.ts / catalog.ts / reader.ts / pagination.ts
    └─ admin/
@@ -108,7 +112,7 @@ HTML/CSS/客户端 JS 通过 Wrangler 的 `[[rules]] type = "Text"` 以文本形
 | `yellow`  | `#fffde7` | 米黄   |
 | `green2`  | `#d4edc9` | 备选绿 |
 
-主题集中在 `src/themes.ts` 的 `THEMES` 表里;新增主题只需加一条,UI 色块会自动更新。双击页面可切换主题选择弹层。
+主题集中在 `src/themes.ts` 的 `THEMES` 表里;新增主题只需加一条,UI 色块会自动更新。公开页面右上角的「主题」按钮可无刷新切换,选择结果会在后续页面中保留;未手动选择时会跟随系统深色偏好。正文页还提供字号、行高、阅读宽度、章节进度和继续阅读。
 
 ---
 
@@ -156,9 +160,9 @@ npx wrangler secret put ADMIN_TOKEN
 | 路由           | `Cache-Control`         |
 | -------------- | ----------------------- |
 | `stos` / `cat` | `public, max-age=60`    |
-| `cont`         | `public, max-age=86400` |
+| `cont`         | `no-store`             |
 
-正文极少变动,因此阅读器缓存较久。通过管理后台上传/替换内容后,若需立即生效,需清除对应 URL 的缓存(Cloudflare Cache API 或缓存规则 purge)。
+正文页使用 `Cache-Control: no-store`,通过管理后台上传/替换内容后无需手动 purge 即可读取新内容。
 
 ---
 

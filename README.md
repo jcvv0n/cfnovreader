@@ -17,22 +17,26 @@ Chapters are grouped into fixed-size R2 shard objects. The reader fetches **only
 
 A small metadata record (chapter count + titles + storage layout) lives in KV. Catalog pages use it for titles; reader pages use it to locate the chapter's shard and detect the last chapter.
 
+The namespace isolates the bookshelf; chapter content and metadata are intentionally identified by `storyId`, so the same story can be reused by multiple namespaces.
+
 ### Storage layout
 
 ```
 KV   story_overview:{namespace}   →  [{storyId, storyName}, ...]    bookshelf
 KV   story_meta:{storyId}          →  {count, titles:[...], storage:{...}}  metadata
-R2   story:{storyId}:shard:{N}    →  up to 100 chapters, gzipped JSON {chapters:[...]}
+R2   story:{storyId}:shard:{version}:{N} → up to 100 chapters, gzipped JSON {chapters:[...]}
+     story:{storyId}:shard:{N}           → legacy shard layout (read/delete compatible)
 ```
 
 | Page              | Reads                                      | Notes                                                  |
 | ----------------- | ------------------------------------------ | ------------------------------------------------------ |
 | Overview (`stos`) | KV `story_overview`                        | lists every book in the namespace                      |
 | Catalog (`cat`)   | KV `story_meta` only                       | paginates titles in memory (10/page); never touches R2 |
-| Reader (`cont`)   | KV `story_meta` + R2 `story:{id}:shard:{N}` | one shard; `count` detects the last chapter            |
+| Reader (`cont`)   | KV `story_meta` + versioned R2 shard       | one shard; `count` detects the last chapter            |
 
 - **Next/previous chapter**: `N+1` / `N-1`; hides "next" when `N === count`.
-- **Delete a book**: read `story_meta` → delete its shard objects in batches → delete `meta`.
+- **Delete a book**: remove it from the shelf → delete all R2 objects for the `storyId` in batches → delete `meta`.
+- **Replace a book**: write a new version and switch `meta` after all shards finish; old versions remain until the book is deleted, avoiding stale KV reads during propagation.
 - **Update one chapter**: rewrite the shard containing that chapter, not the whole book.
 
 ### Compression
@@ -87,7 +91,7 @@ src/
 │  ├─ models.ts          StoryOverview / Chapter / StoryMeta
 │  ├─ kv.ts              story_overview + story_meta CRUD
 │  └─ r2.ts              per-chapter get/put/delete, gzip helpers
-├─ templates/            stories.html / catalog.html / reader.html
+├─ templates/            public HTML + theme.client.js / reader.client.js
 └─ handlers/
    ├─ stories.ts / catalog.ts / reader.ts / pagination.ts
    └─ admin/
@@ -113,7 +117,7 @@ Five built-in themes, selected via `?theme=`:
 | `yellow`  | `#fffde7`  | sepia          |
 | `green2`  | `#d4edc9`  | alt green      |
 
-Themes are defined in a single `THEMES` table in `src/themes.ts`; adding a theme is one entry, and the UI color swatches update automatically. Double-click the page to toggle the theme picker.
+Themes are defined in a single `THEMES` table in `src/themes.ts`; adding a theme is one entry, and the UI color swatches update automatically. Use the `Theme` button in the upper-right corner of public pages for no-reload switching; the selection is retained on subsequent pages and follows the system dark preference when no manual choice exists. Reader pages also provide font, line-height, width, progress, and resume controls.
 
 ---
 
@@ -167,9 +171,9 @@ ADMIN_TOKEN=dev-token
 | Route          | `Cache-Control`         |
 | -------------- | ----------------------- |
 | `stos` / `cat` | `public, max-age=60`    |
-| `cont`         | `public, max-age=86400` |
+| `cont`         | `no-store`             |
 
-Chapter text rarely changes, so the reader caches aggressively. After uploading/replacing content via admin, purge the cached URL (Cloudflare Cache API or a cache-rule purge) if you need changes to appear immediately.
+Reader pages use `Cache-Control: no-store` so replacing content through admin is visible immediately without a manual cache purge.
 
 ---
 

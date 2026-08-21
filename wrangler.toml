@@ -2,6 +2,7 @@ name = "cfnovreader"
 main = "src/index.ts"
 workers_dev = true
 compatibility_date = "2025-04-05"
+
 kv_namespaces = [
   { binding = "NOV_KV", id = "KV_ID" }
 ]
@@ -13,3 +14,8 @@ r2_buckets = [
 rules = [
   { type = "Text", globs = ["**/*.html", "**/*.css", "**/*.client.js"], fallthrough = true },
 ]
+
+# 本地开发配置（局域网可访问）；不放在这里会导致上面的字段被误归入 [dev]
+[dev]
+ip = "0.0.0.0"
+port = 8787

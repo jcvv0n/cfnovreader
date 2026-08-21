@@ -1,4 +1,5 @@
-// R2 数据访问：多章一个 shard object，key 为 story:{storyId}:shard:{N}。
+// R2 数据访问：多章一个 shard object。新上传使用
+// story:{storyId}:shard:{version}:{N}，旧 meta 无 version 时继续读取旧 key。
 // 每个 shard 是 gzipped JSON {chapters:[{title, content}, ...]}。
 //
 // 弱化 pageNo：正文翻页纯靠 N±1，判尾章靠 meta.count（KV）；不做跳章/稀疏编号。
@@ -10,8 +11,19 @@ const PREFIX = 'story';
 export const SHARD_CHAPTER_COUNT = 100;
 const R2_DELETE_BATCH_SIZE = 1000;
 
-const shardKey = (storyId: string, shardNo: number) => `${PREFIX}:${storyId}:shard:${shardNo}`;
+const shardKey = (storyId: string, shardNo: number, version?: string) =>
+  version
+    ? `${PREFIX}:${storyId}:shard:${version}:${shardNo}`
+    : `${PREFIX}:${storyId}:shard:${shardNo}`;
 const legacyChapterKey = (storyId: string, pageNo: number) => `${PREFIX}:${storyId}:${pageNo}`;
+const storyObjectPrefix = (storyId: string) => `${PREFIX}:${storyId}:`;
+
+function isStoryObjectKey(key: string, storyId: string): boolean {
+  const prefix = storyObjectPrefix(storyId);
+  if (!key.startsWith(prefix)) return false;
+  const suffix = key.slice(prefix.length);
+  return /^\d+$/.test(suffix) || /^shard:\d+$/.test(suffix) || /^shard:[^:]+:\d+$/.test(suffix);
+}
 
 interface ChapterShard {
   chapters: Chapter[];
@@ -29,8 +41,8 @@ function offsetForPage(pageNo: number, shardSize = SHARD_CHAPTER_COUNT): number 
 async function gzip(text: string): Promise<Uint8Array> {
   const cs = new CompressionStream('gzip');
   const writer = cs.writable.getWriter();
-  writer.write(new TextEncoder().encode(text));
-  writer.close();
+  await writer.write(new TextEncoder().encode(text));
+  await writer.close();
   const reader = cs.readable.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -53,8 +65,8 @@ async function gzip(text: string): Promise<Uint8Array> {
 async function gunzip(bytes: Uint8Array): Promise<string> {
   const ds = new DecompressionStream('gzip');
   const writer = ds.writable.getWriter();
-  writer.write(bytes);
-  writer.close();
+  await writer.write(bytes);
+  await writer.close();
   const reader = ds.readable.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -85,7 +97,9 @@ async function getShardedChapter(
   meta?: StoryMeta,
 ): Promise<Chapter | null> {
   const shardSize = meta?.storage?.shardSize ?? SHARD_CHAPTER_COUNT;
-  const obj = await bucket.get(shardKey(storyId, shardNoForPage(pageNo, shardSize)));
+  const obj = await bucket.get(
+    shardKey(storyId, shardNoForPage(pageNo, shardSize), meta?.storage?.version),
+  );
   if (!obj) return null;
   const shard = await readGzJson<ChapterShard>(obj);
   return shard.chapters[offsetForPage(pageNo, shardSize)] ?? null;
@@ -122,9 +136,10 @@ async function putShard(
   storyId: string,
   shardNo: number,
   chapters: Chapter[],
+  version?: string,
 ): Promise<void> {
   const gz = await gzip(JSON.stringify({ chapters } satisfies ChapterShard));
-  await bucket.put(shardKey(storyId, shardNo), gz);
+  await bucket.put(shardKey(storyId, shardNo, version), gz);
 }
 
 /** 整本写入：按 shard 写入，避免章节多时触发单次 invocation API 调用限制。 */
@@ -132,7 +147,7 @@ export async function putStory(
   bucket: R2Bucket,
   storyId: string,
   chapters: Chapter[],
-  options: { concurrency?: number } = {},
+  options: { concurrency?: number; version?: string } = {},
 ): Promise<number> {
   const concurrency = Math.max(1, options.concurrency ?? 5);
   const shardCount = Math.ceil(chapters.length / SHARD_CHAPTER_COUNT);
@@ -149,6 +164,7 @@ export async function putStory(
           storyId,
           shardNo,
           chapters.slice(start, start + SHARD_CHAPTER_COUNT),
+          options.version,
         );
       }),
     );
@@ -167,6 +183,24 @@ async function deleteKeysInBatches(bucket: R2Bucket, keys: string[]): Promise<vo
   }
 }
 
+/** 删除 storyId 下所有版本和旧布局对象，用于整本删除及清理孤儿 shard。 */
+export async function deleteAllStoryObjects(bucket: R2Bucket, storyId: string): Promise<void> {
+  const keys: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const listed = await bucket.list({
+      prefix: storyObjectPrefix(storyId),
+      ...(cursor ? { cursor } : {}),
+    });
+    keys.push(
+      ...listed.objects.map((object) => object.key).filter((key) => isStoryObjectKey(key, storyId)),
+    );
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+
+  await deleteKeysInBatches(bucket, keys);
+}
+
 /** 删除整本所有章节内容。meta 缺少 storage 时按旧版单章 key 批量删除。 */
 export async function deleteStoryChapters(
   bucket: R2Bucket,
@@ -174,9 +208,10 @@ export async function deleteStoryChapters(
   metaOrCount: Pick<StoryMeta, 'count' | 'storage'> | number,
 ): Promise<void> {
   const meta = typeof metaOrCount === 'number' ? { count: metaOrCount } : metaOrCount;
-  if (meta.storage?.kind === 'r2-sharded') {
-    const keys = Array.from({ length: meta.storage.shardCount }, (_, i) =>
-      shardKey(storyId, i + 1),
+  const storage = meta.storage;
+  if (storage?.kind === 'r2-sharded') {
+    const keys = Array.from({ length: storage.shardCount }, (_, i) =>
+      shardKey(storyId, i + 1, storage.version),
     );
     await deleteKeysInBatches(bucket, keys);
     return;
@@ -187,7 +222,7 @@ export async function deleteStoryChapters(
 }
 
 /** 由章节列表算 meta。 */
-export function buildMeta(chapters: Chapter[]): StoryMeta {
+export function buildMeta(chapters: Chapter[], version?: string): StoryMeta {
   return {
     count: chapters.length,
     titles: chapters.map((c) => c.title),
@@ -195,6 +230,12 @@ export function buildMeta(chapters: Chapter[]): StoryMeta {
       kind: 'r2-sharded',
       shardSize: SHARD_CHAPTER_COUNT,
       shardCount: Math.ceil(chapters.length / SHARD_CHAPTER_COUNT),
+      ...(version ? { version } : {}),
     },
   };
+}
+
+/** 为一次上传生成不会覆盖现有 shard 的版本标识。 */
+export function createStorageVersion(): string {
+  return crypto.randomUUID().replaceAll('-', '');
 }

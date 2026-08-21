@@ -23,7 +23,15 @@ export function matchRoute(
   for (const r of routes) {
     const m = r.pattern.exec(pathname);
     if (m) {
-      return { handler: r.handler, params: { ...(m.groups ?? {}) } };
+      try {
+        const params = Object.fromEntries(
+          Object.entries(m.groups ?? {}).map(([key, value]) => [key, decodeURIComponent(value)]),
+        );
+        return { handler: r.handler, params };
+      } catch {
+        // malformed percent-encoding is not a valid route parameter
+        return null;
+      }
     }
   }
   return null;

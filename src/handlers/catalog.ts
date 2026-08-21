@@ -3,10 +3,16 @@
 // 目录页只读 KV meta（几 KB），不碰 R2。
 
 import catalogTemplate from '../templates/catalog.html';
-import { render } from '../render';
+import themeClient from '../templates/theme.client.js';
+import { render, escapeHtml } from '../render';
 import { htmlResponse, notFound, parsePageNo } from '../http';
 import { getStoryMeta, listStoriesOrNull } from '../storage';
-import { getThemeCSS, getThemeInputColors, getThemeOptionsHTML, resolveTheme } from '../themes';
+import {
+  getThemeCSS,
+  getThemeOptionsHTML,
+  getThemePreferenceScript,
+  resolveTheme,
+} from '../themes';
 import { CATALOG_PAGE_SIZE, totalCatalogPages } from './pagination';
 import type { RouteHandler } from '../router';
 
@@ -14,18 +20,25 @@ export const catalogHandler: RouteHandler = async (request, env, params) => {
   const url = new URL(request.url);
   const namespace = params.namespace!;
   const storyId = params.storyId!;
+  const encNs = encodeURIComponent(namespace);
+  const encSid = encodeURIComponent(storyId);
 
-  const stories = await listStoriesOrNull(env.NOV_KV, namespace);
+  // 提前解析页码，非法值直接 400，避免无谓的 KV 读取
+  const rawPageNo = parsePageNo(url.searchParams.get('p'), 1);
+
+  // 并行读取 stories（校验合法性）和 meta（分页数据）
+  const [stories, meta] = await Promise.all([
+    listStoriesOrNull(env.NOV_KV, namespace),
+    getStoryMeta(env.NOV_KV, storyId),
+  ]);
   if (!stories) throw notFound('Invalid Page');
   const story = stories.find((s) => s.storyId === storyId);
   if (!story) throw notFound('Invalid Page');
-
-  const meta = await getStoryMeta(env.NOV_KV, storyId);
   if (!meta || meta.count === 0) throw notFound('Invalid Page');
 
   const theme = resolveTheme(url.searchParams.get('theme'));
   const totalPages = Math.max(1, totalCatalogPages(meta.count));
-  const currentPage = Math.min(parsePageNo(url.searchParams.get('p'), 1), totalPages);
+  const currentPage = Math.min(rawPageNo, totalPages);
 
   const start = (currentPage - 1) * CATALOG_PAGE_SIZE;
   const end = Math.min(start + CATALOG_PAGE_SIZE, meta.count);
@@ -38,22 +51,21 @@ export const catalogHandler: RouteHandler = async (request, env, params) => {
   const items: string[] = [];
   for (let i = start; i < end; i++) {
     const pageNo = i + 1;
-    const title = meta.titles[i] || `第${pageNo}章`;
+    const title = escapeHtml(meta.titles[i] || `第${pageNo}章`);
     items.push(
-      `<p id="p${pageNo}"><a href="/r/${namespace}/cont/${storyId}?p=${pageNo}&theme=${theme}">${title}</a></p>`,
+      `<p id="p${pageNo}"><a href="/r/${encNs}/cont/${encSid}?p=${pageNo}&theme=${theme}">${title}</a></p>`,
     );
   }
   const catalogHtml = items.join('\n');
-  const overviewLink = `<p><a href="/r/${namespace}/stos/1?theme=${theme}#s${story.storyId}">小说一览</a></p>`;
-  const inputColors = getThemeInputColors(theme);
 
   return htmlResponse(
     render(catalogTemplate, {
       NAMESPACE: namespace,
       STORY_ID: storyId,
+      ENC_NAMESPACE: encNs,
+      ENC_STORY_ID: encSid,
       STORY_NAME: story.storyName,
       STORY_CATALOG: catalogHtml,
-      OVERVIEW_PAGE: overviewLink,
       CURRENT_PAGE: currentPage,
       TOTAL_PAGES: totalPages,
       PREV_PAGE: prev,
@@ -62,11 +74,19 @@ export const catalogHandler: RouteHandler = async (request, env, params) => {
       PREV_DISABLED: disabledTop,
       NEXT_DISABLED: disabledBottom,
       LAST_DISABLED: disabledBottom,
+      FIRST_ARIA_DISABLED: String(currentPage === 1),
+      PREV_ARIA_DISABLED: String(currentPage === 1),
+      NEXT_ARIA_DISABLED: String(currentPage === totalPages),
+      LAST_ARIA_DISABLED: String(currentPage === totalPages),
+      FIRST_TABINDEX: currentPage === 1 ? '-1' : '0',
+      PREV_TABINDEX: currentPage === 1 ? '-1' : '0',
+      NEXT_TABINDEX: currentPage === totalPages ? '-1' : '0',
+      LAST_TABINDEX: currentPage === totalPages ? '-1' : '0',
       THEME: theme,
+      THEME_PRELOAD: getThemePreferenceScript(),
       THEME_STYLE: getThemeCSS(theme),
       THEME_OPTIONS: getThemeOptionsHTML(),
-      INPUT_BG_COLOR: inputColors.bgColor,
-      INPUT_TEXT_COLOR: inputColors.textColor,
+      THEME_SCRIPT: themeClient,
     }),
     { headers: { 'Cache-Control': 'public, max-age=60' } },
   );

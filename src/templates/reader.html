@@ -4,32 +4,138 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{STORY_TITLE}}</title>
+    {{{RAW:THEME_PRELOAD}}}
     <style>
-      {{THEME_STYLE}}
-      p{font-family:SimHei;font-size:22px;line-height:2.0;letter-spacing:2px;text-indent:48px;}
+      {{{RAW:THEME_STYLE}}}
+      body { padding-top: 52px; padding-bottom: 24px; }
+      p{font-family:SimHei;font-size:var(--reader-font-size,clamp(18px, 4.8vw, 22px));line-height:var(--reader-line-height,2.0);letter-spacing:clamp(0.5px, 0.4vw, 2px);text-indent:2em;}
       a{font-family:SimHei;font-size:24px;text-decoration:none;}
+      .page-tools {
+        position: fixed;
+        top: 8px;
+        right: 8px;
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .page-tools__toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--theme-text);
+        opacity: 0.35;
+        cursor: pointer;
+      }
+      .page-tools__toggle:hover,
+      .page-tools__toggle:focus-visible {
+        background: var(--theme-popup-bg);
+        opacity: 0.7;
+      }
+      .page-tools__toggle .tools-arrow {
+        display: none;
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .page-tools__toggle[aria-expanded='false'] .tools-arrow--expand {
+        display: block;
+      }
+      .page-tools__toggle[aria-expanded='true'] .tools-arrow--collapse {
+        display: block;
+      }
+      .page-tools__items {
+        display: inline-flex;
+        gap: 6px;
+      }
+      .page-tools__items[hidden] { display: none; }
+      .page-tool {
+        min-width: 44px;
+        min-height: 36px;
+        padding: 6px 12px;
+        border: 1px solid var(--theme-border);
+        border-radius: 6px;
+        background: var(--theme-popup-bg);
+        color: var(--theme-text);
+        cursor: pointer;
+        font: inherit;
+      }
+      #reader-settings {
+        position: fixed;
+        top: 52px;
+        right: 8px;
+        z-index: 1002;
+        width: min(320px, calc(100vw - 16px));
+        padding: 14px;
+        border: 1px solid var(--theme-border);
+        border-radius: 8px;
+        background: var(--theme-popup-bg);
+        color: var(--theme-text);
+        text-align: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+      }
+      #reader-settings[hidden] { display: none; }
+      #theme-popup[hidden],
+      #bottom-popup[hidden] { display: none; }
       #theme-popup {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.9);
-        border-bottom: 1px solid #ccc;
-        padding: 0;
-        display: none;
-        z-index: 1000;
+        top: 52px;
+        right: 8px;
+        z-index: 1002;
+        width: min(320px, calc(100vw - 16px));
+        padding: 14px;
+        border: 1px solid var(--theme-border);
+        border-radius: 8px;
+        background: var(--theme-popup-bg);
+        color: var(--theme-text);
         text-align: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         box-sizing: border-box;
+      }
+      .reader-setting {
+        display: grid;
+        grid-template-columns: 72px 1fr 52px;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      .reader-setting input { width: 100%; accent-color: var(--theme-link); }
+      .reader-setting output { text-align: right; color: var(--theme-muted); }
+      #reader-settings-reset {
+        width: 100%;
+        min-height: 36px;
+        border: 1px solid var(--theme-border);
+        border-radius: 6px;
+        background: var(--theme-surface);
+        color: var(--theme-text);
+        cursor: pointer;
       }
       .theme-option {
         width: 40px;
         height: 40px;
         display: inline-block;
-        margin: 0 5px;
+        margin: 0 4px;
         position: relative;
         cursor: pointer;
-        border: 1px solid #ccc;
+        border: 2px solid var(--theme-border);
+        border-radius: 50%;
         vertical-align: top;
+      }
+      .theme-option[aria-current="true"] {
+        outline: 3px solid var(--theme-focus);
+        outline-offset: 2px;
       }
       .theme-option::before {
         content: attr(data-check);
@@ -38,99 +144,220 @@
         left: 50%;
         transform: translate(-50%, -50%);
         font-size: 12px;
-        color: red;
+        color: white;
+        text-shadow: 0 1px 2px #000;
+      }
+      .reader-header, .reader-content, .reader-nav {
+        max-width: var(--reader-content-width, 760px);
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .breadcrumbs {
+        max-width: var(--reader-content-width, 760px);
+        margin: 0 auto 8px;
+        padding: 0 16px;
+        color: var(--theme-muted);
+        font-size: 15px;
+      }
+      .breadcrumbs a { font-size: 16px; }
+      .reader-header {
+        padding: 0 16px;
+      }
+      .reader-progress {
+        color: var(--theme-muted);
+        font-size: 15px;
+        text-align: center;
+      }
+      .reader-progress-track {
+        width: min(100%, 360px);
+        height: 4px;
+        margin: 8px auto 0;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--theme-border);
+      }
+      .reader-progress-value {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--theme-link);
+      }
+      .reader-content {
+        padding: 0 16px;
+        touch-action: pan-y;
+      }
+      .reader-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 16px;
+        margin-top: 28px;
+        margin-bottom: 28px;
+      }
+      .reader-nav a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px 14px;
+        border: 1px solid var(--theme-border);
+        border-radius: 6px;
+        background: var(--theme-surface);
+        color: var(--theme-link);
+        font-size: 20px;
+      }
+      .reader-nav--next .reader-nav__chapter {
+        background: var(--theme-link);
+        color: var(--theme-bg);
+        font-weight: bold;
+      }
+      .reader-nav__catalog {
+        flex: 0 0 auto;
       }
       #bottom-popup {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.9);
-        border-top: 1px solid #ccc;
-        padding: 10px 0;
-        display: none;
-        z-index: 1000;
+        top: 52px;
+        right: 8px;
+        z-index: 1002;
+        max-width: calc(100vw - 16px);
+        padding: 14px;
+        border: 1px solid var(--theme-border);
+        border-radius: 8px;
+        background: var(--theme-popup-bg);
+        color: var(--theme-text);
         text-align: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         box-sizing: border-box;
       }
       #bottom-popup a {
-         margin: 0 15px;
-         font-size: 28px;
-         line-height: 1;
+        display: inline-block;
+        margin: 4px;
+        padding: 5px 10px;
+        border: 1px solid var(--theme-border);
+        border-radius: 6px;
+        background: var(--theme-surface);
+        color: var(--theme-link);
+        font-size: 15px;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
+      }
+      #bottom-popup .reader-nav__quick--next {
+        background: var(--theme-link);
+        color: var(--theme-bg);
+        font-weight: bold;
+      }
+      .page-tool:focus-visible,
+      .theme-option:focus-visible,
+      #reader-settings-reset:focus-visible,
+      .reader-setting input:focus-visible,
+      .reader-nav a:focus-visible,
+      #bottom-popup a:focus-visible {
+        outline: 3px solid var(--theme-focus);
+        outline-offset: 2px;
       }
     </style>
   </head>
-  <body>
-    <div id="theme-popup">{{THEME_OPTIONS}}</div>
-    <div id="bottom-popup">
-      {{PRE_PAGE_TAG_INNER}}
-      <a href="/r/{{NAMESPACE}}/cat/{{STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}"
+  <body data-story-id="{{STORY_ID}}" data-page-no="{{PAGE_NO}}">
+    <div class="page-tools" aria-label="阅读工具">
+      <button
+        type="button"
+        id="tools-toggle"
+        class="page-tools__toggle"
+        aria-expanded="false"
+        aria-controls="page-tools-items"
+        aria-label="阅读工具"
+      >
+        <svg class="tools-arrow tools-arrow--expand" viewBox="0 0 24 24" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"></polyline>
+          <polyline points="21 18 15 12 21 6"></polyline></svg
+        ><svg class="tools-arrow tools-arrow--collapse" viewBox="0 0 24 24" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+          <polyline points="3 18 9 12 3 6"></polyline>
+        </svg>
+      </button>
+      <span id="page-tools-items" class="page-tools__items" hidden>
+        <button
+          type="button"
+          id="theme-toggle"
+          class="page-tool"
+          aria-controls="theme-popup"
+          aria-expanded="false"
+        >
+          主题
+        </button>
+        <button
+          type="button"
+          id="reader-nav-toggle"
+          class="page-tool"
+          aria-controls="bottom-popup"
+          aria-expanded="false"
+        >
+          导航
+        </button>
+        <button
+          type="button"
+          id="reader-settings-toggle"
+          class="page-tool"
+          aria-controls="reader-settings"
+          aria-expanded="false"
+        >
+          阅读
+        </button>
+      </span>
+    </div>
+    <div id="theme-popup" hidden role="group" aria-label="选择主题">{{{RAW:THEME_OPTIONS}}}</div>
+    <div id="reader-settings" hidden role="group" aria-label="阅读设置">
+      <label class="reader-setting">
+        <span>字号</span>
+        <input id="reader-font-size" type="range" min="16" max="30" step="1" value="22" />
+        <output id="reader-font-size-value">22px</output>
+      </label>
+      <label class="reader-setting">
+        <span>行高</span>
+        <input id="reader-line-height" type="range" min="1.4" max="2.4" step="0.1" value="2" />
+        <output id="reader-line-height-value">2.0</output>
+      </label>
+      <label class="reader-setting">
+        <span>阅读宽度</span>
+        <input id="reader-content-width" type="range" min="560" max="960" step="20" value="760" />
+        <output id="reader-content-width-value">760px</output>
+      </label>
+      <button type="button" id="reader-settings-reset">恢复默认</button>
+    </div>
+    <nav id="bottom-popup" hidden aria-label="快速章节导航">
+      {{{RAW:PRE_PAGE_TAG_INNER}}}
+      <a
+        class="reader-nav__quick reader-nav__quick--catalog"
+        href="/r/{{ENC_NAMESPACE}}/cat/{{ENC_STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}"
+        aria-label="返回目录并定位当前章节"
         >目录</a
       >
-      {{NEXT_PAGE_TAG_INNER}}
-    </div>
-    <div>
+      {{{RAW:NEXT_PAGE_TAG_INNER}}}
+    </nav>
+    <header class="reader-header">
+      <nav class="breadcrumbs" aria-label="页面层级">
+        <a href="/r/{{ENC_NAMESPACE}}/stos/1?theme={{THEME}}">小说一览</a>
+        <span aria-hidden="true"> / </span>
+        <a
+          href="/r/{{ENC_NAMESPACE}}/cat/{{ENC_STORY_ID}}?p={{CATALOG_PAGE}}&theme={{THEME}}#p{{PAGE_NO}}"
+          >目录</a
+        >
+      </nav>
       <h1>{{STORY_TITLE}}</h1>
-    </div>
-    <div align="text">{{CONTENT_TEXT}}</div>
-    {{NEXT_PAGE_TAG}} {{PRE_PAGE_TAG}}
-    <script>
-      function setupPopups() {
-        if (window.popupsInitialized) return;
-        window.popupsInitialized = true;
-
-        const themePopup = document.getElementById('theme-popup');
-        const bottomPopup = document.getElementById('bottom-popup');
-        let popupsVisible = false;
-
-        function showPopups() {
-          if (!popupsVisible) {
-            popupsVisible = true;
-            themePopup.style.display = 'block';
-            bottomPopup.style.display = 'block';
-          }
-        }
-
-        function hidePopups() {
-          if (popupsVisible) {
-            popupsVisible = false;
-            themePopup.style.display = 'none';
-            bottomPopup.style.display = 'none';
-          }
-        }
-
-        function togglePopups() {
-          if (popupsVisible) hidePopups();
-          else showPopups();
-        }
-
-        document.addEventListener('dblclick', function (e) {
-          const target = e.target;
-          if (themePopup.contains(target) || bottomPopup.contains(target)) return;
-          if (
-            target.tagName === 'A' &&
-            target.getAttribute('href') &&
-            target.getAttribute('href').startsWith('/')
-          ) {
-            if (popupsVisible) hidePopups();
-            return;
-          }
-          togglePopups();
-        });
-      }
-
-      document.addEventListener('DOMContentLoaded', function () {
-        setupPopups();
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentTheme = urlParams.get('theme') || 'default';
-        document.querySelectorAll('.theme-option').forEach(function (option) {
-          const theme = option.getAttribute('data-theme');
-          if (theme === currentTheme) option.setAttribute('data-check', '✔');
-          const currentUrl = new URL(window.location.href);
-          currentUrl.searchParams.set('theme', theme);
-          option.setAttribute('href', currentUrl.toString());
-        });
-      });
-    </script>
+      <div class="reader-progress" aria-label="阅读进度">
+        第 {{PAGE_NO}} / {{TOTAL_CHAPTERS}} 章
+        <div class="reader-progress-track" aria-hidden="true">
+          <div class="reader-progress-value" style="width: {{PROGRESS_PERCENT}}%"></div>
+        </div>
+      </div>
+    </header>
+    <main class="reader-content">{{{RAW:CONTENT_TEXT}}}</main>
+    {{{RAW:NEXT_PAGE_TAG}}} {{{RAW:PRE_PAGE_TAG}}}
+    <!-- prettier-ignore -->
+    <script>{{{RAW:THEME_SCRIPT}}}</script>
+    <!-- prettier-ignore -->
+    <script>{{{RAW:READER_SCRIPT}}}</script>
   </body>
 </html>

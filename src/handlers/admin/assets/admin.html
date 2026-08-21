@@ -6,7 +6,7 @@
     <title>cfnovreader Admin</title>
     <!-- prettier-ignore -->
     <style>
-      {{ADMIN_CSS}}
+      {{{RAW:ADMIN_CSS}}}
     </style>
   </head>
   <body>
@@ -17,7 +17,8 @@
         <div class="row">
           <label>Admin Token</label>
           <input type="password" id="token-input" placeholder="输入 ADMIN_TOKEN" />
-          <button class="btn-primary" data-action="save-token">保存</button>
+          <button type="button" class="btn-primary" data-action="save-token">保存</button>
+          <button type="button" class="btn-secondary" data-action="clear-token">清除</button>
         </div>
         <div id="auth-msg" class="msg"></div>
       </div>
@@ -27,25 +28,71 @@
         <div class="row">
           <label>Namespace</label>
           <input type="text" id="ns-input" placeholder="例如: jcvv0n" />
-          <button class="btn-primary" data-action="load-stories">加载小说列表</button>
+          <button type="button" class="btn-primary" data-action="load-stories">加载小说列表</button>
         </div>
         <div id="ns-msg" class="msg"></div>
       </div>
 
-      <div class="tab-bar">
-        <div class="tab active" data-tab="stories">小说列表</div>
-        <div class="tab" data-tab="add">添加小说</div>
-        <div class="tab" data-tab="upload">上传章节</div>
+      <div class="tab-bar" role="tablist" aria-label="管理功能">
+        <button
+          type="button"
+          id="tab-stories-tab"
+          class="tab active"
+          role="tab"
+          aria-selected="true"
+          aria-controls="tab-stories"
+          data-tab="stories"
+        >
+          小说列表
+        </button>
+        <button
+          type="button"
+          id="tab-add-tab"
+          class="tab"
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-add"
+          data-tab="add"
+          tabindex="-1"
+        >
+          添加小说
+        </button>
+        <button
+          type="button"
+          id="tab-upload-tab"
+          class="tab"
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-upload"
+          data-tab="upload"
+          tabindex="-1"
+        >
+          上传章节
+        </button>
       </div>
 
       <div class="tab-content">
-        <div class="section active" id="tab-stories">
+        <section
+          class="section active"
+          id="tab-stories"
+          role="tabpanel"
+          aria-labelledby="tab-stories-tab"
+          tabindex="0"
+        >
           <ul class="story-list" id="story-list">
             <li style="color: #aaa; padding: 8px 0">请先输入命名空间并加载</li>
           </ul>
-        </div>
+          <div id="story-msg" class="msg"></div>
+        </section>
 
-        <div class="section" id="tab-add">
+        <section
+          class="section"
+          id="tab-add"
+          role="tabpanel"
+          aria-labelledby="tab-add-tab"
+          tabindex="0"
+          hidden
+        >
           <h2>添加小说到书目（KV）</h2>
           <div class="row">
             <label>小说名称</label>
@@ -57,12 +104,19 @@
           </div>
           <p class="hint">添加到书目后，再到"上传章节"Tab 上传正文内容到 R2。</p>
           <div class="actions">
-            <button class="btn-success" data-action="add-story">添加到书目</button>
+            <button type="button" class="btn-success" data-action="add-story">添加到书目</button>
           </div>
           <div id="add-msg" class="msg"></div>
-        </div>
+        </section>
 
-        <div class="section" id="tab-upload">
+        <section
+          class="section"
+          id="tab-upload"
+          role="tabpanel"
+          aria-labelledby="tab-upload-tab"
+          tabindex="0"
+          hidden
+        >
           <h2>上传章节内容到 R2</h2>
           <div class="row">
             <label>小说 ID</label>
@@ -79,15 +133,22 @@
             <label>或上传文件</label>
             <input type="file" id="upload-file" accept=".json" />
           </div>
-          <p class="hint">会覆盖该小说 ID 现有的 R2 内容。上传后立即生效。</p>
+          <p class="hint">会覆盖该小说 ID 现有的 R2 内容。单次 JSON 最大 5 MB，上传后立即生效。</p>
+          <div id="upload-preview" class="upload-preview" aria-live="polite"></div>
+          <div class="upload-progress">
+            <progress id="upload-progress" max="100" value="0" hidden></progress>
+            <span id="upload-progress-label"></span>
+          </div>
           <div class="actions">
-            <button class="btn-success" data-action="upload-chapters">上传到 R2</button>
+            <button type="button" class="btn-success" data-action="upload-chapters">
+              上传到 R2
+            </button>
           </div>
           <div id="upload-msg" class="msg"></div>
-        </div>
+        </section>
       </div>
     </div>
     <!-- prettier-ignore -->
-    <script>{{ADMIN_JS}}</script>
+    <script>{{{RAW:ADMIN_JS}}}</script>
   </body>
 </html>
